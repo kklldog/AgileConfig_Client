@@ -1,5 +1,5 @@
 # AgileConfig_Client
-
+AgileConfig的客户端，.net core standard2.0实现，core跟framework的.net程序都可以使用。
 ## 使用客户端
 ### 安装客户端
 ```
