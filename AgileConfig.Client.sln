@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgileConfig.Client", "Agile
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgileConfig.ClientTest", "AgileConfig.ClientTest\AgileConfig.ClientTest.csproj", "{1F10C644-5DBC-4437-9DE6-89C74FF2DB36}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgileConfigMVCSample", "AgileConfigMVCSample\AgileConfigMVCSample.csproj", "{C5E40B88-5210-445B-AA69-178DF8135EB7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{1F10C644-5DBC-4437-9DE6-89C74FF2DB36}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F10C644-5DBC-4437-9DE6-89C74FF2DB36}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F10C644-5DBC-4437-9DE6-89C74FF2DB36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5E40B88-5210-445B-AA69-178DF8135EB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5E40B88-5210-445B-AA69-178DF8135EB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5E40B88-5210-445B-AA69-178DF8135EB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5E40B88-5210-445B-AA69-178DF8135EB7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
