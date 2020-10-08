@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using AgileConfig.Client;
 
 namespace Agile.Config.Client
 {
@@ -43,6 +44,8 @@ namespace Agile.Config.Client
         private string AppId { get; set; }
         private string Secret { get; set; }
         private bool _isAutoReConnecting = false;
+        private bool _isWsHeartbeating = false;
+
         private ClientWebSocket WebsocketClient { get; set; }
         private bool _adminSayOffline = false;
         private ConcurrentDictionary<string, string> _data;
@@ -56,24 +59,6 @@ namespace Agile.Config.Client
             }
         }
 
-        private string PickOneServer()
-        {
-            if (string.IsNullOrEmpty(ServerNodes))
-            {
-                throw new ArgumentNullException("ServerNodes");
-            }
-
-            var servers = ServerNodes.Split(',');
-            if (servers.Length == 1)
-            {
-                return servers[0];
-            }
-
-            var index = new Random().Next(0, servers.Length);
-
-            return servers[index];
-        }
-
         public async Task<bool> ConnectAsync()
         {
             if (WebsocketClient?.State == WebSocketState.Open)
@@ -85,39 +70,66 @@ namespace Agile.Config.Client
             {
                 WebsocketClient = new ClientWebSocket();
             }
-            var connected = await TryConnectWebsocketAsync().ConfigureAwait(false);
-            if (connected)
-            {
-                //连接成功立马加载配置
-                Load();
-                HandleWebsocketMessageAsync();
-                WebsocketHeartbeatAsync();
-                //设置自动重连
-                AutoReConnect();
-            }
+            var connected = await TryConnectWebsocketAsync(WebsocketClient).ConfigureAwait(false);
+            Load();
+            HandleWebsocketMessageAsync();
+            WebsocketHeartbeatAsync();
+            //设置自动重连
+            AutoReConnect();
 
             return connected;
         }
 
-        private async Task<bool> TryConnectWebsocketAsync()
+        private async Task<bool> TryConnectWebsocketAsync(ClientWebSocket client)
         {
-            WebsocketClient.Options.SetRequestHeader("appid", AppId);
-            WebsocketClient.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(AppId, Secret));
-            var server = PickOneServer();
-            var websocketServerUrl = "";
-            if (server.StartsWith("https:", StringComparison.CurrentCultureIgnoreCase))
+            client.Options.SetRequestHeader("appid", AppId);
+            client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(AppId, Secret));
+
+            var randomServer = new RandomServers(ServerNodes);
+            int failCount = 0;
+            while (!randomServer.IsComplete)
             {
-                websocketServerUrl = server.Replace("https:", "wss:").Replace("HTTPS:", "wss:");
+                var server = randomServer.Next();
+                try
+                {
+                    var websocketServerUrl = "";
+                    if (server.StartsWith("https:", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        websocketServerUrl = server.Replace("https:", "wss:").Replace("HTTPS:", "wss:");
+                    }
+                    else
+                    {
+                        websocketServerUrl = server.Replace("http:", "ws:").Replace("HTTP:", "ws:");
+                    }
+                    websocketServerUrl += "/ws";
+                    Logger?.LogTrace("AgileConfig Client Websocket try connect to server {0}", websocketServerUrl);
+                    await client.ConnectAsync(new Uri(websocketServerUrl), CancellationToken.None).ConfigureAwait(false);
+                    Logger?.LogTrace("AgileConfig Client Websocket Connected server {0}", websocketServerUrl);
+                    break;
+                }
+                catch
+                {
+                    failCount++;
+                }
             }
-            else
+
+            if (failCount == randomServer.ServerCount)
             {
-                websocketServerUrl = server.Replace("http:", "ws:").Replace("HTTP:", "ws:");
+                //连接所有的服务器都失败了。
+                return false;
             }
-            websocketServerUrl += "/ws";
-            await WebsocketClient.ConnectAsync(new Uri(websocketServerUrl), CancellationToken.None).ConfigureAwait(false);
-            Logger?.LogTrace("AgileConfig Client Websocket Connected , {0}", websocketServerUrl);
 
             return true;
+        }
+
+        private void LoadConfigsFromLoacl()
+        {
+            var fileContent = ReadConfigsFromLocal();
+            if (!string.IsNullOrEmpty(fileContent))
+            {
+                ReloadDataDict(fileContent);
+                Logger?.LogTrace("AgileConfig Client load all configs from local file .");
+            }
         }
 
         /// <summary>
@@ -153,7 +165,7 @@ namespace Agile.Config.Client
                         }
 
                         WebsocketClient = new ClientWebSocket();
-                        var connected = await TryConnectWebsocketAsync().ConfigureAwait(false);
+                        var connected = await TryConnectWebsocketAsync(WebsocketClient).ConfigureAwait(false);
                         if (connected)
                         {
                             Load();
@@ -181,6 +193,12 @@ namespace Agile.Config.Client
         /// <returns></returns>
         public void WebsocketHeartbeatAsync()
         {
+            if (_isWsHeartbeating)
+            {
+                return;
+            }
+            _isWsHeartbeating = true;
+
             Task.Run(async () =>
             {
                 var data = Encoding.UTF8.GetBytes("ping");
@@ -198,7 +216,7 @@ namespace Agile.Config.Client
                             //这里由于多线程的问题，WebsocketClient有可能在上一个if判断成功后被置空或者断开，所以需要try一下避免线程退出
                             await WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
                                     CancellationToken.None).ConfigureAwait(false);
-                            Logger?.LogTrace("AgileConfig Client Say 'hi' by Websocket .");
+                            Logger?.LogTrace("AgileConfig Client Say 'ping' by Websocket .");
                         }
                         catch (Exception ex)
                         {
@@ -349,16 +367,15 @@ namespace Agile.Config.Client
         }
 
         /// <summary>
-        /// 通过http从server拉取所有配置到本地，尝试5次
+        /// 通过http从server拉取所有配置到本地
         /// </summary>
         public bool Load()
         {
-            const int maxTry = 5;
-            int tryCount = 0;
-            while (tryCount < maxTry)
+            int failCount = 0;
+            var randomServer = new RandomServers(ServerNodes);
+            while (!randomServer.IsComplete)
             {
-                tryCount++;
-
+                var url = randomServer.Next();
                 try
                 {
                     var op = new AgileHttp.RequestOptions()
@@ -369,7 +386,7 @@ namespace Agile.Config.Client
                             {"Authorization", GenerateBasicAuthorization(AppId, Secret) }
                         }
                     };
-                    var apiUrl = $"{PickOneServer()}/api/config/app/{AppId}";
+                    var apiUrl = $"{url}/api/config/app/{AppId}";
                     using (var result = AgileHttp.HTTP.Send(apiUrl, "GET", null, op))
                     {
                         if (result.StatusCode == System.Net.HttpStatusCode.OK)
@@ -378,7 +395,7 @@ namespace Agile.Config.Client
                             ReloadDataDict(respContent);
                             WriteConfigsToLocal(respContent);
 
-                            Logger?.LogTrace("AgileConfig Client Loaded all the configs success from {0} , Try count: {1}.", apiUrl, tryCount);
+                            Logger?.LogTrace("AgileConfig Client Loaded all the configs success from {0} , Try count: {1}.", apiUrl, failCount);
                             return true;
                         }
                         else
@@ -389,25 +406,15 @@ namespace Agile.Config.Client
                         }
                     }
                 }
-                catch (Exception ex)
+                catch
                 {
-                    if (tryCount == maxTry)
-                    {
-                        //load configs from local file
-                        var fileContent = ReadConfigsFromLocal();
-                        if (!string.IsNullOrEmpty(fileContent))
-                        {
-                            ReloadDataDict(fileContent);
-
-                            Logger?.LogTrace("AgileConfig Client load all configs from local file .");
-                            return true;
-                        }
-                    }
-
-                    Logger?.LogError(ex, "AgileConfig Client try to load all configs failed . TryCount: {0}", tryCount);
+                    failCount++;
                 }
             }
-
+            if (failCount == randomServer.ServerCount)
+            {
+                LoadConfigsFromLoacl();
+            }
             return false;
         }
 
