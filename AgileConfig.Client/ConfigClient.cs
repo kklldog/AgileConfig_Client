@@ -319,7 +319,7 @@ namespace Agile.Config.Client
                                     case ActionConst.Offline:
                                         _adminSayOffline = true;
                                         await WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
-                                        Logger?.LogTrace("Websocket client offline because admin console send a commond 'offline' ,");
+                                        Logger?.LogTrace("Websocket client offline because admin console send a command 'offline' ,");
                                         NoticeChangedAsync(ActionConst.Offline);
                                         break;
                                     case ActionConst.Reload:
