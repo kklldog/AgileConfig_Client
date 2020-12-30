@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgileConfig.ClientTest", "A
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgileConfigMVCSample", "AgileConfigMVCSample\AgileConfigMVCSample.csproj", "{C5E40B88-5210-445B-AA69-178DF8135EB7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgileConfig.UnitTests", "AgileConfig.ClientTests\AgileConfig.UnitTests.csproj", "{8BA111F5-F8E9-4EF0-A4C4-A5DB4818A86B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgileConfig.UnitTests", "AgileConfig.ClientTests\AgileConfig.UnitTests.csproj", "{8BA111F5-F8E9-4EF0-A4C4-A5DB4818A86B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{6816B8D5-A04A-4014-9837-0B6F50013425}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,6 +44,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1F10C644-5DBC-4437-9DE6-89C74FF2DB36} = {6816B8D5-A04A-4014-9837-0B6F50013425}
+		{8BA111F5-F8E9-4EF0-A4C4-A5DB4818A86B} = {6816B8D5-A04A-4014-9837-0B6F50013425}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9F4BE340-448F-4E99-A0BF-954634C87F42}

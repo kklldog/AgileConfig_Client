@@ -20,17 +20,12 @@ namespace AgileConfigClientTest
 
                 var lf = serviceProvider.GetService<ILoggerFactory>();
 
-                var appId = "0003";
-                var seret = "";
-                var host = "http://localhost:5000";
-
                 try
                 {
-                    var client = new ConfigClient(appId, seret, host, lf.CreateLogger<ConfigClient>());
+                    var client = new ConfigClient();
+                    client.Logger = lf.CreateLogger<ConfigClient>();
                     client.ConfigChanged += Client_ConfigChanged;
                     await client.ConnectAsync();
-                    //var provider = new AgileConfigProvider(client);
-                    //provider.Load();
                     await Task.Run(async () =>
                     {
                         while (true)
@@ -39,7 +34,6 @@ namespace AgileConfigClientTest
                             foreach (string key in client.Data.Keys)
                             {
                                 var val = client[key];
-                                //provider.TryGet(key, out string val);
                                 Console.WriteLine("{0} : {1}", key, val);
                             }
                         }

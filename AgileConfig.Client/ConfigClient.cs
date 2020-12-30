@@ -12,11 +12,40 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using AgileConfig.Client;
-
+using Microsoft.Extensions.Configuration;
 namespace Agile.Config.Client
 {
     public class ConfigClient : IConfigClient
     {
+
+        public ConfigClient()
+        {
+            //读取本地配置
+            var localconfig = new ConfigurationBuilder()
+                             .SetBasePath(Directory.GetCurrentDirectory())
+                             .AddJsonFile("appsettings.json").Build();
+            //从本地配置里读取AgileConfig的相关信息
+            var configSection = localconfig.GetSection("AgileConfig");
+            if (!configSection.Exists())
+            {
+                throw new Exception("Can not find section:AgileConfig from appsettings.json");
+            }
+            var appId = localconfig["AgileConfig:appId"];
+            var secret = localconfig["AgileConfig:secret"];
+            var serverNodes = localconfig["AgileConfig:nodes"];
+            if (string.IsNullOrEmpty(appId))
+            {
+                throw new ArgumentNullException(nameof(appId));
+            }
+            if (string.IsNullOrEmpty(serverNodes))
+            {
+                throw new ArgumentNullException(nameof(serverNodes));
+            }
+            this.AppId = appId;
+            this.Secret = secret;
+            this.ServerNodes = serverNodes;
+        }
+
         public ConfigClient(string appId, string secret, string serverNodes, ILogger logger = null)
         {
             this.Logger = logger;
@@ -31,14 +60,11 @@ namespace Agile.Config.Client
             this.AppId = appId;
             this.Secret = secret;
             this.ServerNodes = serverNodes;
-            _data = new ConcurrentDictionary<string, string>();
         }
 
         private int WebsocketReconnectInterval = 5;
         private int WebsocketHeartbeatInterval = 30;
 
-        public event Action<ConfigChangedArg> ConfigChanged;
-        public ConcurrentDictionary<string, string> Data => _data;
         public ILogger Logger { get; set; }
         private string ServerNodes { get; set; }
         private string AppId { get; set; }
@@ -48,7 +74,22 @@ namespace Agile.Config.Client
 
         private ClientWebSocket WebsocketClient { get; set; }
         private bool _adminSayOffline = false;
-        private ConcurrentDictionary<string, string> _data;
+        private bool _isLoadFromLocal = false;
+        private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>();
+        private List<ConfigItem> _configs = new List<ConfigItem>();
+
+        /// <summary>
+        /// 是否读取的事本地缓存的配置
+        /// </summary>
+        public bool IsLoadFromLocal => _isLoadFromLocal;
+        /// <summary>
+        /// 配置项修改事件
+        /// </summary>
+        public event Action<ConfigChangedArg> ConfigChanged;
+        /// <summary>
+        /// 所有的配置项最后都会转换为字典
+        /// </summary>
+        public ConcurrentDictionary<string, string> Data => _data;
 
         public string this[string key]
         {
@@ -59,6 +100,36 @@ namespace Agile.Config.Client
             }
         }
 
+        /// <summary>
+        /// 根据键值获取配置值
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public string Get(string key)
+        {
+            Data.TryGetValue(key, out string val);
+            return val;
+        }
+
+        /// <summary>
+        /// 获取分组配置信息
+        /// </summary>
+        /// <param name="groupName"></param>
+        /// <returns></returns>
+        public List<ConfigItem> GetGroup(string groupName)
+        {
+            if (_configs == null)
+            {
+                return null;
+            }
+
+            return _configs.Where(x => x.group == groupName).ToList();
+        }
+
+        /// <summary>
+        /// 连接服务端
+        /// </summary>
+        /// <returns></returns>
         public async Task<bool> ConnectAsync()
         {
             if (WebsocketClient?.State == WebSocketState.Open)
@@ -127,7 +198,8 @@ namespace Agile.Config.Client
             var fileContent = ReadConfigsFromLocal();
             if (!string.IsNullOrEmpty(fileContent))
             {
-                ReloadDataDict(fileContent);
+                ReloadDataDictFromContent(fileContent);
+                _isLoadFromLocal = true;
                 Logger?.LogTrace("AgileConfig Client load all configs from local file .");
             }
         }
@@ -392,8 +464,9 @@ namespace Agile.Config.Client
                         if (result.StatusCode == System.Net.HttpStatusCode.OK)
                         {
                             var respContent = result.GetResponseContent();
-                            ReloadDataDict(respContent);
+                            ReloadDataDictFromContent(respContent);
                             WriteConfigsToLocal(respContent);
+                            _isLoadFromLocal = false;
 
                             Logger?.LogTrace("AgileConfig Client Loaded all the configs success from {0} , Try count: {1}.", apiUrl, failCount);
                             return true;
@@ -418,17 +491,26 @@ namespace Agile.Config.Client
             return false;
         }
 
-        private void ReloadDataDict(string content)
+        public void LoadConfigs(List<ConfigItem> configs)
         {
             Data.Clear();
-            var concurrentDict = Data as ConcurrentDictionary<string, string>;
-            var configs = JsonConvert.DeserializeObject<List<ConfigItem>>(content);
-            configs.ForEach(c =>
+            _configs.Clear();
+            if (configs != null)
             {
-                var key = GenerateKey(c);
-                string value = c.value;
-                concurrentDict.TryAdd(key.ToString(), value);
-            });
+                _configs = configs;
+                _configs.ForEach(c =>
+                {
+                    var key = GenerateKey(c);
+                    string value = c.value;
+                    Data.TryAdd(key.ToString(), value);
+                });
+            }
+        }
+
+        private void ReloadDataDictFromContent(string content)
+        {
+            var configs = JsonConvert.DeserializeObject<List<ConfigItem>>(content);
+            LoadConfigs(configs);
         }
 
         private const string LocalCacheFileName = "agileconfig.client.configs.cache";
@@ -481,5 +563,6 @@ namespace Agile.Config.Client
             }
         }
 
+       
     }
 }
