@@ -8,12 +8,14 @@ using Microsoft.Extensions.Logging;
 using AgileConfigMVCSample.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Agile.Config.Client;
 
 namespace AgileConfigMVCSample.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IConfigClient _IConfigClient;
         private readonly IConfiguration _IConfiguration;
         private readonly IOptions<DbConfigOptions> _dbOptions;
         private readonly IOptionsSnapshot<DbConfigOptions> _dbOptionsSnapshot;
@@ -24,9 +26,11 @@ namespace AgileConfigMVCSample.Controllers
             IConfiguration configuration, 
             IOptions<DbConfigOptions> dbOptions, 
             IOptionsSnapshot<DbConfigOptions> dbOptionsSnapshot,
-            IOptionsMonitor<DbConfigOptions> dbOptionsMonitor)
+            IOptionsMonitor<DbConfigOptions> dbOptionsMonitor,
+            IConfigClient configClient)
         {
             _logger = logger;
+            _IConfigClient = configClient;
             _IConfiguration = configuration;
             _dbOptions = dbOptions;
             _dbOptionsSnapshot = dbOptionsSnapshot;
@@ -64,8 +68,8 @@ namespace AgileConfigMVCSample.Controllers
         /// <returns></returns>
         public IActionResult ByInstance()
         {
-            var userId = Program.ConfigClient["userId"];
-            var dbConn = Program.ConfigClient["db:connection"];
+            var userId = _IConfigClient["userId"];
+            var dbConn = _IConfigClient["db:connection"];
 
             ViewBag.userId = userId;
             ViewBag.dbConn = dbConn;
@@ -82,7 +86,7 @@ namespace AgileConfigMVCSample.Controllers
             var dbConn = _dbOptions.Value.connection;
             ViewBag.dbConn = dbConn;
 
-            return View("Configuration");
+            return View("Option");
         }
 
         public IActionResult ByOptionsSnapshot()
@@ -90,7 +94,7 @@ namespace AgileConfigMVCSample.Controllers
             var dbConn = _dbOptionsSnapshot.Value.connection;
             ViewBag.dbConn = dbConn;
 
-            return View("Configuration");
+            return View("Option");
         }
 
         public IActionResult ByOptionsMonitor()
@@ -98,7 +102,7 @@ namespace AgileConfigMVCSample.Controllers
             var dbConn = _dbOptionsMonitor.CurrentValue.connection;
             ViewBag.dbConn = dbConn;
 
-            return View("Configuration");
+            return View("Option");
         }
 
         public IActionResult Privacy()

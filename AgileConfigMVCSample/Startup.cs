@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Agile.Config.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -29,6 +30,8 @@ namespace AgileConfigMVCSample
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<DbConfigOptions>(Configuration.GetSection("db"));
+
+            services.AddSingleton<IConfigClient>(Program.ConfigClient);
 
             services.AddControllersWithViews();
         }
