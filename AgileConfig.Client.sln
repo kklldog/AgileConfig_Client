@@ -15,6 +15,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgileConfig.UnitTests", "Ag
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{6816B8D5-A04A-4014-9837-0B6F50013425}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample", "sample", "{CE91E81A-309C-42A9-B7C8-69347A8E8570}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,7 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1F10C644-5DBC-4437-9DE6-89C74FF2DB36} = {6816B8D5-A04A-4014-9837-0B6F50013425}
+		{C5E40B88-5210-445B-AA69-178DF8135EB7} = {CE91E81A-309C-42A9-B7C8-69347A8E8570}
 		{8BA111F5-F8E9-4EF0-A4C4-A5DB4818A86B} = {6816B8D5-A04A-4014-9837-0B6F50013425}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
