@@ -32,16 +32,8 @@ Install-Package AgileConfig.Client
             Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((context, config) =>
             {
-                //读取本地配置
-                var localconfig = new ConfigurationBuilder()
-                                 .SetBasePath(Directory.GetCurrentDirectory())
-                                 .AddJsonFile("appsettings.json").Build();
-                //从本地配置里读取AgileConfig的相关信息
-                var appId = localconfig["AgileConfig:appId"];
-                var secret = localconfig["AgileConfig:secret"];
-                var nodes = localconfig["AgileConfig:nodes"];
                 //new一个client实例
-                var configClient = new ConfigClient(appId, secret, nodes);
+                var configClient = new ConfigClient();
                 //使用AddAgileConfig配置一个新的IConfigurationSource
                 config.AddAgileConfig(configClient);
                 //找一个变量挂载client实例，以便其他地方可以直接使用实例访问配置
@@ -102,7 +94,7 @@ public class HomeController : Controller
             ViewBag.userId = userId;
             ViewBag.dbConn = dbConn;
 
-            return View("ByIConfiguration");
+            return View("ByInstance");
         }
 
         /// <summary>
@@ -114,7 +106,7 @@ public class HomeController : Controller
             var dbConn = _dbOptions.Value.connection;
             ViewBag.dbConn = dbConn;
 
-            return View("ByIConfiguration");
+            return View("ByOptions");
         }
     }
 ```
