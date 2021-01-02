@@ -28,7 +28,6 @@ namespace AgileConfigWPFSample
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             this.tbx1.Text = App.ConfigClient["userId"];
-
             this.tbx2.Text = App.ConfigClient["connection"];
         }
     }
