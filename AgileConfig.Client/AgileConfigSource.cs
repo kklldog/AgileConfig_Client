@@ -11,6 +11,12 @@ namespace Agile.Config.Client
         {
             return builder.Add(new AgileConfigSource(client));
         }
+
+        public static IConfigurationBuilder AddAgileConfig(
+          this IConfigurationBuilder builder)
+        {
+            return builder.Add(new AgileConfigSource(new ConfigClient()));
+        }
     }
 
     public class AgileConfigSource : IConfigurationSource
