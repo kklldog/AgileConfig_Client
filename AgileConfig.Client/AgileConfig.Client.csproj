@@ -3,14 +3,14 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>mj.zhou</Authors>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>A client for AgileConfig .</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kklldog/AgileConfig</PackageProjectUrl>
     <AssemblyVersion>1.1.1.0</AssemblyVersion>
     <FileVersion>1.1.1.0</FileVersion>
-    <PackageReleaseNotes>新增GetGroup方法，修复bug；</PackageReleaseNotes>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
