@@ -31,7 +31,7 @@ namespace Agile.Config.Client
             var configSection = localconfig.GetSection("AgileConfig");
             if (!configSection.Exists())
             {
-                throw new Exception("Can not find section:AgileConfig from appsettings.json");
+                throw new Exception($"Can not find section:AgileConfig from {json}");
             }
             var appId = localconfig["AgileConfig:appId"];
             var secret = localconfig["AgileConfig:secret"];
