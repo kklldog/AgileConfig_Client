@@ -18,12 +18,15 @@ namespace Agile.Config.Client
     public class ConfigClient : IConfigClient
     {
 
-        public ConfigClient()
+        public ConfigClient(string json = "appsettings.json")
         {
+            if (string.IsNullOrWhiteSpace(json))
+                throw new ArgumentNullException(nameof(json));
+
             //读取本地配置
             var localconfig = new ConfigurationBuilder()
                              .SetBasePath(Directory.GetCurrentDirectory())
-                             .AddJsonFile("appsettings.json").Build();
+                             .AddJsonFile(json).Build();
             //从本地配置里读取AgileConfig的相关信息
             var configSection = localconfig.GetSection("AgileConfig");
             if (!configSection.Exists())
