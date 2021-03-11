@@ -181,8 +181,10 @@ namespace Agile.Config.Client
                     Logger?.LogTrace("AgileConfig Client Websocket Connected server {0}", websocketServerUrl);
                     break;
                 }
-                catch
+                catch(Exception e)
                 {
+                    Logger?.LogError(e, "AgileConfig Client Websocket try connect to server occur error .");
+
                     failCount++;
                 }
             }
