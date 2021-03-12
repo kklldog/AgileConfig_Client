@@ -17,7 +17,7 @@ namespace Agile.Config.Client
 {
     public class ConfigClient : IConfigClient
     {
-
+        public static IConfigClient Instance = null;
         public ConfigClient(string json = "appsettings.json")
         {
             if (string.IsNullOrWhiteSpace(json))
