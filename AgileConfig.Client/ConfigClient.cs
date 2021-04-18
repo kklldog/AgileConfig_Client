@@ -36,6 +36,9 @@ namespace Agile.Config.Client
             var appId = localconfig["AgileConfig:appId"];
             var secret = localconfig["AgileConfig:secret"];
             var serverNodes = localconfig["AgileConfig:nodes"];
+            var name = localconfig["AgileConfig:name"];
+            var tag = localconfig["AgileConfig:tag"];
+
             if (string.IsNullOrEmpty(appId))
             {
                 throw new ArgumentNullException(nameof(appId));
@@ -44,9 +47,11 @@ namespace Agile.Config.Client
             {
                 throw new ArgumentNullException(nameof(serverNodes));
             }
-            this.AppId = appId;
-            this.Secret = secret;
-            this.ServerNodes = serverNodes;
+            this.Name = name;
+            this.Tag = tag;
+            this._AppId = appId;
+            this._Secret = secret;
+            this._ServerNodes = serverNodes;
         }
 
         public ConfigClient(string appId, string secret, string serverNodes, ILogger logger = null)
@@ -60,31 +65,48 @@ namespace Agile.Config.Client
             {
                 throw new ArgumentNullException(nameof(serverNodes));
             }
-            this.AppId = appId;
-            this.Secret = secret;
-            this.ServerNodes = serverNodes;
+            this._AppId = appId;
+            this._Secret = secret;
+            this._ServerNodes = serverNodes;
         }
 
-        private int WebsocketReconnectInterval = 5;
-        private int WebsocketHeartbeatInterval = 30;
+        private int _WebsocketReconnectInterval = 5;
+        private int _WebsocketHeartbeatInterval = 30;
 
         public ILogger Logger { get; set; }
-        private string ServerNodes { get; set; }
-        private string AppId { get; set; }
-        private string Secret { get; set; }
+        private string _ServerNodes;
+        private string _AppId;
+        private string _Secret;
         private bool _isAutoReConnecting = false;
         private bool _isWsHeartbeating = false;
 
-        private ClientWebSocket WebsocketClient { get; set; }
+        private ClientWebSocket _WebsocketClient;
         private bool _adminSayOffline = false;
         private bool _isLoadFromLocal = false;
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>();
         private List<ConfigItem> _configs = new List<ConfigItem>();
 
+        public string Name
+        {
+            get;
+            set;
+        }
+        public string Tag
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// 是否读取的事本地缓存的配置
         /// </summary>
-        public bool IsLoadFromLocal => _isLoadFromLocal;
+        public bool IsLoadFromLocal
+        {
+            get
+            {
+                return _isLoadFromLocal;
+            }
+        }
         /// <summary>
         /// 配置项修改事件
         /// </summary>
@@ -135,16 +157,16 @@ namespace Agile.Config.Client
         /// <returns></returns>
         public async Task<bool> ConnectAsync()
         {
-            if (WebsocketClient?.State == WebSocketState.Open)
+            if (_WebsocketClient?.State == WebSocketState.Open)
             {
                 return true;
             }
 
-            if (WebsocketClient == null)
+            if (_WebsocketClient == null)
             {
-                WebsocketClient = new ClientWebSocket();
+                _WebsocketClient = new ClientWebSocket();
             }
-            var connected = await TryConnectWebsocketAsync(WebsocketClient).ConfigureAwait(false);
+            var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
             Load();
             HandleWebsocketMessageAsync();
             WebsocketHeartbeatAsync();
@@ -156,10 +178,12 @@ namespace Agile.Config.Client
 
         private async Task<bool> TryConnectWebsocketAsync(ClientWebSocket client)
         {
-            client.Options.SetRequestHeader("appid", AppId);
-            client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(AppId, Secret));
+            client.Options.SetRequestHeader("client_name", Name);
+            client.Options.SetRequestHeader("client_tag", Tag);
+            client.Options.SetRequestHeader("appid", _AppId);
+            client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(_AppId, _Secret));
 
-            var randomServer = new RandomServers(ServerNodes);
+            var randomServer = new RandomServers(_ServerNodes);
             int failCount = 0;
             while (!randomServer.IsComplete)
             {
@@ -225,24 +249,24 @@ namespace Agile.Config.Client
             {
                 while (true)
                 {
-                    await Task.Delay(1000 * WebsocketReconnectInterval).ConfigureAwait(false);
+                    await Task.Delay(1000 * _WebsocketReconnectInterval).ConfigureAwait(false);
 
-                    if (WebsocketClient?.State == WebSocketState.Open)
+                    if (_WebsocketClient?.State == WebSocketState.Open)
                     {
                         continue;
                     }
                     try
                     {
-                        WebsocketClient?.Abort();
-                        WebsocketClient?.Dispose();
+                        _WebsocketClient?.Abort();
+                        _WebsocketClient?.Dispose();
 
                         if (_adminSayOffline)
                         {
                             break;
                         }
 
-                        WebsocketClient = new ClientWebSocket();
-                        var connected = await TryConnectWebsocketAsync(WebsocketClient).ConfigureAwait(false);
+                        _WebsocketClient = new ClientWebSocket();
+                        var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
                         if (connected)
                         {
                             Load();
@@ -281,17 +305,17 @@ namespace Agile.Config.Client
                 var data = Encoding.UTF8.GetBytes("ping");
                 while (true)
                 {
-                    await Task.Delay(1000 * WebsocketHeartbeatInterval).ConfigureAwait(false); ;
+                    await Task.Delay(1000 * _WebsocketHeartbeatInterval).ConfigureAwait(false); ;
                     if (_adminSayOffline)
                     {
                         break;
                     }
-                    if (WebsocketClient?.State == WebSocketState.Open)
+                    if (_WebsocketClient?.State == WebSocketState.Open)
                     {
                         try
                         {
                             //这里由于多线程的问题，WebsocketClient有可能在上一个if判断成功后被置空或者断开，所以需要try一下避免线程退出
-                            await WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
+                            await _WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
                                     CancellationToken.None).ConfigureAwait(false);
                             Logger?.LogTrace("AgileConfig Client Say 'ping' by Websocket .");
                         }
@@ -311,13 +335,13 @@ namespace Agile.Config.Client
         {
             Task.Run(async () =>
             {
-                while (WebsocketClient?.State == WebSocketState.Open)
+                while (_WebsocketClient?.State == WebSocketState.Open)
                 {
                     ArraySegment<Byte> buffer = new ArraySegment<byte>(new Byte[1024 * 2]);
                     WebSocketReceiveResult result = null;
                     try
                     {
-                        result = await WebsocketClient.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
+                        result = await _WebsocketClient.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -395,7 +419,7 @@ namespace Agile.Config.Client
                                         break;
                                     case ActionConst.Offline:
                                         _adminSayOffline = true;
-                                        await WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
+                                        await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
                                         Logger?.LogTrace("Websocket client offline because admin console send a command 'offline' ,");
                                         NoticeChangedAsync(ActionConst.Offline);
                                         break;
@@ -449,7 +473,7 @@ namespace Agile.Config.Client
         public bool Load()
         {
             int failCount = 0;
-            var randomServer = new RandomServers(ServerNodes);
+            var randomServer = new RandomServers(_ServerNodes);
             while (!randomServer.IsComplete)
             {
                 var url = randomServer.Next();
@@ -459,11 +483,11 @@ namespace Agile.Config.Client
                     {
                         Headers = new Dictionary<string, string>()
                         {
-                            {"appid", AppId },
-                            {"Authorization", GenerateBasicAuthorization(AppId, Secret) }
+                            {"appid", _AppId },
+                            {"Authorization", GenerateBasicAuthorization(_AppId, _Secret) }
                         }
                     };
-                    var apiUrl = $"{url}/api/config/app/{AppId}";
+                    var apiUrl = $"{url}/api/config/app/{_AppId}";
                     using (var result = AgileHttp.HTTP.Send(apiUrl, "GET", null, op))
                     {
                         if (result.StatusCode == System.Net.HttpStatusCode.OK)
