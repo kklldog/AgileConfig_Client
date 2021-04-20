@@ -1,18 +1,18 @@
 ﻿using Agile.Config.Protocol;
+using AgileConfig.Client;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-using AgileConfig.Client;
-using Microsoft.Extensions.Configuration;
 namespace Agile.Config.Client
 {
     public class ConfigClient : IConfigClient
@@ -178,8 +178,8 @@ namespace Agile.Config.Client
 
         private async Task<bool> TryConnectWebsocketAsync(ClientWebSocket client)
         {
-            client.Options.SetRequestHeader("client_name", Name);
-            client.Options.SetRequestHeader("client_tag", Tag);
+            client.Options.SetRequestHeader("client_name", System.Web.HttpUtility.UrlEncode(Name));
+            client.Options.SetRequestHeader("client_tag", System.Web.HttpUtility.UrlEncode(Tag));
             client.Options.SetRequestHeader("appid", _AppId);
             client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(_AppId, _Secret));
 
@@ -199,13 +199,13 @@ namespace Agile.Config.Client
                     {
                         websocketServerUrl = server.Replace("http:", "ws:").Replace("HTTP:", "ws:");
                     }
-                    websocketServerUrl += "/ws";
+                    websocketServerUrl = websocketServerUrl + (websocketServerUrl.EndsWith("/") ? "ws" : "/ws");
                     Logger?.LogTrace("AgileConfig Client Websocket try connect to server {0}", websocketServerUrl);
                     await client.ConnectAsync(new Uri(websocketServerUrl), CancellationToken.None).ConfigureAwait(false);
                     Logger?.LogTrace("AgileConfig Client Websocket Connected server {0}", websocketServerUrl);
                     break;
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Logger?.LogError(e, "AgileConfig Client Websocket try connect to server occur error .");
 
@@ -592,6 +592,6 @@ namespace Agile.Config.Client
             }
         }
 
-       
+
     }
 }
