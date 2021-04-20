@@ -178,8 +178,9 @@ namespace Agile.Config.Client
 
         private async Task<bool> TryConnectWebsocketAsync(ClientWebSocket client)
         {
-            client.Options.SetRequestHeader("client_name", System.Web.HttpUtility.UrlEncode(Name));
-            client.Options.SetRequestHeader("client_tag", System.Web.HttpUtility.UrlEncode(Tag));
+            var clientName = string.IsNullOrEmpty(Name) ? "" : System.Web.HttpUtility.UrlEncode(Name);
+            var tag = string.IsNullOrEmpty(Tag) ? "" : System.Web.HttpUtility.UrlEncode(Tag);
+
             client.Options.SetRequestHeader("appid", _AppId);
             client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(_AppId, _Secret));
 
@@ -200,6 +201,9 @@ namespace Agile.Config.Client
                         websocketServerUrl = server.Replace("http:", "ws:").Replace("HTTP:", "ws:");
                     }
                     websocketServerUrl = websocketServerUrl + (websocketServerUrl.EndsWith("/") ? "ws" : "/ws");
+                    websocketServerUrl += "?";
+                    websocketServerUrl += "client_name=" + clientName;
+                    websocketServerUrl += "&client_tag=" + tag;
                     Logger?.LogTrace("AgileConfig Client Websocket try connect to server {0}", websocketServerUrl);
                     await client.ConnectAsync(new Uri(websocketServerUrl), CancellationToken.None).ConfigureAwait(false);
                     Logger?.LogTrace("AgileConfig Client Websocket Connected server {0}", websocketServerUrl);
