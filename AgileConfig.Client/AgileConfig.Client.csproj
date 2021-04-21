@@ -3,14 +3,14 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>mj.zhou</Authors>
-    <Version>1.1.8</Version>
+    <Version>1.1.8.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>A client for AgileConfig .</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kklldog/AgileConfig</PackageProjectUrl>
-    <AssemblyVersion>1.1.8.0</AssemblyVersion>
-    <FileVersion>1.1.8.0</FileVersion>
-    <PackageReleaseNotes>修复name，tag属性不能传中文的问题。</PackageReleaseNotes>
+    <AssemblyVersion>1.1.8.1</AssemblyVersion>
+    <FileVersion>1.1.8.1</FileVersion>
+    <PackageReleaseNotes>默认构造函数支持从环境变量读取配置</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
