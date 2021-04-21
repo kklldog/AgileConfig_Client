@@ -26,7 +26,7 @@ namespace Agile.Config.Client
             //读取本地配置
             var localconfig = new ConfigurationBuilder()
                              .SetBasePath(Directory.GetCurrentDirectory())
-                             .AddJsonFile(json).Build();
+                             .AddJsonFile(json).AddEnvironmentVariables().Build();
             //从本地配置里读取AgileConfig的相关信息
             var configSection = localconfig.GetSection("AgileConfig");
             if (!configSection.Exists())
