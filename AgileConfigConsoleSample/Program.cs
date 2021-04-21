@@ -17,7 +17,6 @@ namespace AgileConfigConsoleSample
             var nodes = "http://agileconfig.xbaby.xyz:5000";
             //使用有参构造函数，手动传入appid等信息
             var client = new ConfigClient(appId, secret, nodes);
-
             Task.Run(async () =>
             {
                 while (true)
