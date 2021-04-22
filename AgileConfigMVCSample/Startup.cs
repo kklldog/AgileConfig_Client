@@ -31,7 +31,7 @@ namespace AgileConfigMVCSample
         {
             services.Configure<DbConfigOptions>(Configuration.GetSection("db"));
 
-            services.AddSingleton<IConfigClient>(Program.ConfigClient);
+            services.AddAgileConfig();
 
             services.AddControllersWithViews();
         }

@@ -11,6 +11,10 @@ namespace Agile.Config.Client
         public AgileConfigProvider(IConfigClient client)
         {
             Client = client as ConfigClient;
+            Client.ConfigChanged += (arg) =>
+            {
+                this.OnReload();
+            };
         }
 
         /// <summary>
@@ -18,10 +22,6 @@ namespace Agile.Config.Client
         /// </summary>
         public override void Load()
         {
-            Client.ConfigChanged += (arg) =>
-            {
-                this.OnReload();
-            };
             Client.ConnectAsync().GetAwaiter().GetResult() ;
             Data = Client.Data;
         }

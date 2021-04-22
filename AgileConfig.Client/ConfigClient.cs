@@ -83,7 +83,7 @@ namespace Agile.Config.Client
         private ClientWebSocket _WebsocketClient;
         private bool _adminSayOffline = false;
         private bool _isLoadFromLocal = false;
-        private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>();
+        private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
 
         public string Name

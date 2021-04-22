@@ -30,8 +30,6 @@ namespace AgileConfigMVCSample
                 var configClient = new ConfigClient();
                 //使用AddAgileConfig配置一个新的IConfigurationSource
                 config.AddAgileConfig(configClient);
-                //找一个变量挂载client实例，以便其他地方可以直接使用实例访问配置
-                ConfigClient = configClient;
                 //注册配置项修改事件
                 configClient.ConfigChanged += (arg) =>
                 {
