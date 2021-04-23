@@ -546,7 +546,7 @@ namespace Agile.Config.Client
             LoadConfigs(configs);
         }
 
-        private const string LocalCacheFileName = "agileconfig.client.configs.cache";
+        private string LocalCacheFileName => $"{_AppId}.agileconfig.client.configs.cache";
         private void WriteConfigsToLocal(string configContent)
         {
             try
