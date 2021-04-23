@@ -54,6 +54,45 @@ namespace Agile.Config.Client
             this._ServerNodes = serverNodes;
         }
 
+        public ConfigClient(IConfiguration configuration, ILogger logger = null)
+        {
+            this.Logger = logger;
+
+            var children = configuration.GetSection("AgileConfig").GetChildren();
+
+            if (children == null || !children.Any())
+            {
+                children = configuration.GetChildren();
+            }
+
+            if (children == null || !children.Any())
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
+            var appId = children.FirstOrDefault(x => string.Equals(x.Key, "appid", StringComparison.OrdinalIgnoreCase))?.Value;
+            var secret = children.FirstOrDefault(x => string.Equals(x.Key, "secret", StringComparison.OrdinalIgnoreCase))?.Value;
+            var serverNodes = children.FirstOrDefault(x => string.Equals(x.Key, "nodes", StringComparison.OrdinalIgnoreCase))?.Value;
+            var name = children.FirstOrDefault(x => string.Equals(x.Key, "name", StringComparison.OrdinalIgnoreCase))?.Value;
+            var tag = children.FirstOrDefault(x => string.Equals(x.Key, "tag", StringComparison.OrdinalIgnoreCase))?.Value;
+
+            if (string.IsNullOrEmpty(appId))
+            {
+                throw new ArgumentNullException(nameof(appId));
+            }
+
+            if (string.IsNullOrEmpty(serverNodes))
+            {
+                throw new ArgumentNullException(nameof(serverNodes));
+            }
+
+            this.Name = name;
+            this.Tag = tag;
+            this._AppId = appId;
+            this._Secret = secret;
+            this._ServerNodes = serverNodes;
+        }
+
         public ConfigClient(string appId, string secret, string serverNodes, ILogger logger = null)
         {
             this.Logger = logger;
