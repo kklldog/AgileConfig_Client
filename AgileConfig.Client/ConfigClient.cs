@@ -70,11 +70,11 @@ namespace Agile.Config.Client
                 throw new ArgumentNullException(nameof(configuration));
             }
 
-            var appId = children.FirstOrDefault(x => x.Key?.ToLower() == "appid")?.Value;
-            var secret = children.FirstOrDefault(x => x.Key?.ToLower() == "secret")?.Value;
-            var serverNodes = children.FirstOrDefault(x => x.Key?.ToLower() == "nodes")?.Value;
-            var name = children.FirstOrDefault(x => x.Key?.ToLower() == "name")?.Value;
-            var tag = children.FirstOrDefault(x => x.Key?.ToLower() == "tag")?.Value;
+            var appId = children.FirstOrDefault(x => string.Equals(x.Key, "appid", StringComparison.OrdinalIgnoreCase))?.Value;
+            var secret = children.FirstOrDefault(x => string.Equals(x.Key, "secret", StringComparison.OrdinalIgnoreCase))?.Value;
+            var serverNodes = children.FirstOrDefault(x => string.Equals(x.Key, "nodes", StringComparison.OrdinalIgnoreCase))?.Value;
+            var name = children.FirstOrDefault(x => string.Equals(x.Key, "name", StringComparison.OrdinalIgnoreCase))?.Value;
+            var tag = children.FirstOrDefault(x => string.Equals(x.Key, "tag", StringComparison.OrdinalIgnoreCase))?.Value;
 
             if (string.IsNullOrEmpty(appId))
             {
