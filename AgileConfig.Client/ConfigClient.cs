@@ -57,7 +57,14 @@ namespace Agile.Config.Client
         public ConfigClient(IConfiguration configuration, ILogger logger = null)
         {
             this.Logger = logger;
-            var children = configuration.GetChildren();
+
+            var children = configuration.GetSection("AgileConfig").GetChildren();
+
+            if (children == null || !children.Any())
+            {
+                children = configuration.GetChildren();
+            }
+
             if (children == null || !children.Any())
             {
                 throw new ArgumentNullException(nameof(configuration));
