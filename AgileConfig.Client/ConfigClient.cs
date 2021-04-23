@@ -54,6 +54,38 @@ namespace Agile.Config.Client
             this._ServerNodes = serverNodes;
         }
 
+        public ConfigClient(IConfiguration configuration, ILogger logger = null)
+        {
+            this.Logger = logger;
+            var children = configuration.GetChildren();
+            if (children == null || !children.Any())
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
+            var appId = children.FirstOrDefault(x => x.Key?.ToLower() == "appid")?.Value;
+            var secret = children.FirstOrDefault(x => x.Key?.ToLower() == "secret")?.Value;
+            var serverNodes = children.FirstOrDefault(x => x.Key?.ToLower() == "nodes")?.Value;
+            var name = children.FirstOrDefault(x => x.Key?.ToLower() == "name")?.Value;
+            var tag = children.FirstOrDefault(x => x.Key?.ToLower() == "tag")?.Value;
+
+            if (string.IsNullOrEmpty(appId))
+            {
+                throw new ArgumentNullException(nameof(appId));
+            }
+
+            if (string.IsNullOrEmpty(serverNodes))
+            {
+                throw new ArgumentNullException(nameof(serverNodes));
+            }
+
+            this.Name = name;
+            this.Tag = tag;
+            this._AppId = appId;
+            this._Secret = secret;
+            this._ServerNodes = serverNodes;
+        }
+
         public ConfigClient(string appId, string secret, string serverNodes, ILogger logger = null)
         {
             this.Logger = logger;
