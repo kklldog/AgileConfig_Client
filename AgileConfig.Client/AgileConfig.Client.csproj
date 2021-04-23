@@ -3,14 +3,14 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>mj.zhou</Authors>
-    <Version>1.1.8.3</Version>
+    <Version>1.1.8.4</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>A client for AgileConfig .</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kklldog/AgileConfig</PackageProjectUrl>
-    <AssemblyVersion>1.1.8.3</AssemblyVersion>
-    <FileVersion>1.1.8.3</FileVersion>
-    <PackageReleaseNotes>缓存配置的时候文件名加上了appid以便区分多个应用</PackageReleaseNotes>
+    <AssemblyVersion>1.1.8.4</AssemblyVersion>
+    <FileVersion>1.1.8.4</FileVersion>
+    <PackageReleaseNotes>新增一个构造函数，支持从iconfiguration读取appid等配置</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
