@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AgileConfig.Client\AgileConfig.Client.csproj" />
+    <PackageReference Include="AgileConfig.Client" Version="1.1.8.4" />
   </ItemGroup>
 
 </Project>
