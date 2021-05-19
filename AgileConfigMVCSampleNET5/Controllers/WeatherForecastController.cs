@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Agile.Config.Client;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -19,12 +20,16 @@ namespace AgileConfigMVCSampleNET5.Controllers
 
         private readonly ILogger<WeatherForecastController> _logger;
         private readonly IConfiguration _IConfiguration;
+        private readonly IConfigClient _configClient;
+
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger,
-            IConfiguration configuration
+            IConfiguration configuration,
+            IConfigClient configClient
             )
         {
             _IConfiguration = configuration;
+            _configClient = configClient;
             _logger = logger;
         }
 
@@ -32,6 +37,7 @@ namespace AgileConfigMVCSampleNET5.Controllers
         public IEnumerable<WeatherForecast> Get()
         {
             var config = _IConfiguration;
+            var client = _configClient;
 
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

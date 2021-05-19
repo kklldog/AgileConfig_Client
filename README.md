@@ -35,20 +35,30 @@ Install-Package AgileConfig.Client
             Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((context, config) =>
             {
-                //new一个client实例
-                var configClient = new ConfigClient();
-                //使用AddAgileConfig配置一个新的IConfigurationSource
-                config.AddAgileConfig(configClient);
-                //找一个变量挂载client实例，以便其他地方可以直接使用实例访问配置
-                ConfigClient = configClient;
-                //注册配置项修改事件
-                configClient.ConfigChanged += ConfigClient_ConfigChanged;
+                config.AddAgileConfig((arg) =>
+                {
+                    Console.WriteLine($"action:{arg.Action} key:{arg.Key}");
+                });
             })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
                 });
 ```
+在program的ConfigureAppConfiguration方法内使用AddAgileConfig添加一个配置源。
+```
+     public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddAgileConfig();
+
+            services.AddControllers();
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "AgileConfigMVCSampleNET5", Version = "v1" });
+            });
+        }
+```
+如果需要使用ConfigClient的实例来直接读取配置，可以在startup类的ConfigureServices方法内配置AddAgileConfig，以便使用IConfigClient接口直接注入ConfigClient的实例。
 ## 读取配置
 AgileConfig支持asp.net core 标准的IConfiguration，跟IOptions模式读取配置。还支持直接通过AgileConfigClient实例直接读取：
 ```
@@ -57,12 +67,14 @@ public class HomeController : Controller
         private readonly ILogger<HomeController> _logger;
         private readonly IConfiguration _IConfiguration;
         private readonly IOptions<DbConfigOptions> _dbOptions;
+        private readonly IConfigClient _IConfigClient;
 
-        public HomeController(ILogger<HomeController> logger, IConfiguration configuration, IOptions<DbConfigOptions> dbOptions)
+        public HomeController(ILogger<HomeController> logger, IConfiguration configuration, IOptions<DbConfigOptions> dbOptions, IConfigClient configClient)
         {
             _logger = logger;
             _IConfiguration = configuration;
             _dbOptions = dbOptions;
+            _IConfigClient = configClient;
         }
 
         public IActionResult Index()
@@ -91,8 +103,8 @@ public class HomeController : Controller
         /// <returns></returns>
         public IActionResult ByInstance()
         {
-            var userId = Program.ConfigClient["userId"];
-            var dbConn = Program.ConfigClient["db:connection"];
+            var userId = _IConfigClient["userId"];
+            var dbConn = _IConfigClient["db:connection"];
 
             ViewBag.userId = userId;
             ViewBag.dbConn = dbConn;
