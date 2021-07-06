@@ -200,6 +200,12 @@ namespace Agile.Config.Client
             {
                 return true;
             }
+            else
+            {
+                _WebsocketClient?.Abort();
+                _WebsocketClient?.Dispose();
+                _WebsocketClient = default;
+            }
 
             if (_WebsocketClient == null)
             {
