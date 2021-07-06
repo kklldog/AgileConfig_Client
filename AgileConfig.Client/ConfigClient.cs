@@ -492,13 +492,13 @@ namespace Agile.Config.Client
             }
         }
 
-        private Task NoticeChangedAsync(string action, string key = "")
+        private void NoticeChangedAsync(string action, string key = "")
         {
             if (ConfigChanged == null)
             {
-                return Task.CompletedTask;
+                return;
             }
-            return Task.Run(() =>
+            Task.Run(() =>
             {
                 ConfigChanged(new ConfigChangedArg(action, key));
             });

@@ -3,14 +3,14 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>mj.zhou</Authors>
-    <Version>1.1.8.5</Version>
+    <Version>1.1.8.6</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>A client for AgileConfig .</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kklldog/AgileConfig</PackageProjectUrl>
-    <AssemblyVersion>1.1.8.5</AssemblyVersion>
-    <FileVersion>1.1.8.5</FileVersion>
-    <PackageReleaseNotes>修复node address以/结尾的时候导致http请求失败的问题</PackageReleaseNotes>
+    <AssemblyVersion>1.1.8.6</AssemblyVersion>
+    <FileVersion>1.1.8.6</FileVersion>
+    <PackageReleaseNotes>修复多次调用Configuration.Build方法会多次调用websocket.connect的导致报错的问题。</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
