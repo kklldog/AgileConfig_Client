@@ -21,6 +21,8 @@ namespace Agile.Config.Client
 
     public interface IConfigClient
     {
+        ConnectStatus Status { get; }
+
         string this[string key] { get; }
 
         string Get(string key);

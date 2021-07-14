@@ -15,6 +15,13 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace Agile.Config.Client
 {
+    public enum ConnectStatus
+    {
+        Disconnected,
+        Connecting,
+        Connected,
+    }
+
     public class ConfigClient : IConfigClient
     {
         public static IConfigClient Instance = null;
@@ -125,6 +132,8 @@ namespace Agile.Config.Client
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
 
+        public ConnectStatus Status { get; private set; }
+
         public string Name
         {
             get;
@@ -196,7 +205,9 @@ namespace Agile.Config.Client
         /// <returns></returns>
         public async Task<bool> ConnectAsync()
         {
-            if (_WebsocketClient?.State == WebSocketState.Open)
+            if (this.Status == ConnectStatus.Connected 
+                || this.Status == ConnectStatus.Connecting 
+                || _WebsocketClient?.State == WebSocketState.Open)
             {
                 return true;
             }
@@ -211,7 +222,13 @@ namespace Agile.Config.Client
             {
                 _WebsocketClient = new ClientWebSocket();
             }
+
+            this.Status = ConnectStatus.Connecting;
             var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
+            if (connected)
+            {
+                this.Status = ConnectStatus.Connected;
+            }
             Load();
             HandleWebsocketMessageAsync();
             WebsocketHeartbeatAsync();
@@ -223,6 +240,7 @@ namespace Agile.Config.Client
 
         private async Task<bool> TryConnectWebsocketAsync(ClientWebSocket client)
         {
+            this.Status = ConnectStatus.Connecting;
             var clientName = string.IsNullOrEmpty(Name) ? "" : System.Web.HttpUtility.UrlEncode(Name);
             var tag = string.IsNullOrEmpty(Tag) ? "" : System.Web.HttpUtility.UrlEncode(Tag);
 
@@ -256,18 +274,19 @@ namespace Agile.Config.Client
                 }
                 catch (Exception e)
                 {
-                    Logger?.LogError(e, "AgileConfig Client Websocket try connect to server occur error .");
-
                     failCount++;
+                    Logger?.LogError(e, "AgileConfig Client Websocket try connect to server occur error .");
                 }
             }
 
             if (failCount == randomServer.ServerCount)
             {
                 //连接所有的服务器都失败了。
+                this.Status = ConnectStatus.Disconnected;
                 return false;
             }
 
+            this.Status = ConnectStatus.Connected;
             return true;
         }
 
@@ -469,6 +488,7 @@ namespace Agile.Config.Client
                                     case ActionConst.Offline:
                                         _adminSayOffline = true;
                                         await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
+                                        this.Status = ConnectStatus.Disconnected;
                                         Logger?.LogTrace("Websocket client offline because admin console send a command 'offline' ,");
                                         NoticeChangedAsync(ActionConst.Offline);
                                         break;
