@@ -216,22 +216,22 @@ namespace Agile.Config.Client
                 _WebsocketClient?.Abort();
                 _WebsocketClient?.Dispose();
                 _WebsocketClient = default;
+                this.Status = ConnectStatus.Disconnected;
             }
 
             if (_WebsocketClient == null)
             {
+                this.Status = ConnectStatus.Connecting;
                 _WebsocketClient = new ClientWebSocket();
             }
 
-            this.Status = ConnectStatus.Connecting;
             var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
+            Load();//不管websocket是否成功，都去拉一次配置
             if (connected)
             {
-                this.Status = ConnectStatus.Connected;
+                HandleWebsocketMessageAsync();
+                WebsocketHeartbeatAsync();
             }
-            Load();
-            HandleWebsocketMessageAsync();
-            WebsocketHeartbeatAsync();
             //设置自动重连
             AutoReConnect();
 
@@ -327,6 +327,7 @@ namespace Agile.Config.Client
                     {
                         _WebsocketClient?.Abort();
                         _WebsocketClient?.Dispose();
+                        this.Status = ConnectStatus.Disconnected;
 
                         if (_adminSayOffline)
                         {
