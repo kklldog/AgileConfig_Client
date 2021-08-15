@@ -313,16 +313,17 @@ namespace Agile.Config.Client
             }
             _isAutoReConnecting = true;
 
-            Task.Run(async () =>
+            Thread th = new Thread(async () =>
             {
                 while (true)
                 {
-                    await Task.Delay(1000 * _WebsocketReconnectInterval).ConfigureAwait(false);
+                    Thread.Sleep(1000 * _WebsocketReconnectInterval);
 
                     if (_WebsocketClient?.State == WebSocketState.Open)
                     {
                         continue;
                     }
+
                     try
                     {
                         _WebsocketClient?.Abort();
@@ -349,6 +350,7 @@ namespace Agile.Config.Client
                     }
                 }
             });
+            th.Start();
         }
 
         private string GenerateBasicAuthorization(string appId, string secret)
@@ -369,12 +371,12 @@ namespace Agile.Config.Client
             }
             _isWsHeartbeating = true;
 
-            Task.Run(async () =>
+            new Thread(async () =>
             {
                 var data = Encoding.UTF8.GetBytes("ping");
                 while (true)
                 {
-                    await Task.Delay(1000 * _WebsocketHeartbeatInterval).ConfigureAwait(false); ;
+                    Thread.Sleep(1000 * _WebsocketHeartbeatInterval);
                     if (_adminSayOffline)
                     {
                         break;
@@ -385,7 +387,7 @@ namespace Agile.Config.Client
                         {
                             //这里由于多线程的问题，WebsocketClient有可能在上一个if判断成功后被置空或者断开，所以需要try一下避免线程退出
                             await _WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
-                                    CancellationToken.None).ConfigureAwait(false);
+                                CancellationToken.None).ConfigureAwait(false);
                             Logger?.LogTrace("AgileConfig Client Say 'ping' by Websocket .");
                         }
                         catch (Exception ex)
@@ -394,7 +396,7 @@ namespace Agile.Config.Client
                         }
                     }
                 }
-            });
+            }).Start();
         }
         /// <summary>
         /// 开启一个线程对服务端推送的websocket message进行处理
@@ -402,7 +404,7 @@ namespace Agile.Config.Client
         /// <returns></returns>
         private void HandleWebsocketMessageAsync()
         {
-            Task.Run(async () =>
+            new Thread(async () =>
             {
                 while (_WebsocketClient?.State == WebSocketState.Open)
                 {
@@ -424,7 +426,7 @@ namespace Agile.Config.Client
                     }
                     ProcessMessage(result, buffer);
                 }
-            });
+            }).Start();
         }
 
         /// <summary>
