@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 
-namespace Agile.Config.Client
+namespace AgileConfig.Client
 {
     public class AgileConfigProvider : ConfigurationProvider
     {

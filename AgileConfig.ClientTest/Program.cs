@@ -1,8 +1,8 @@
-﻿using Agile.Config.Client;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using AgileConfig.Client;
 
 namespace AgileConfigClientTest
 {

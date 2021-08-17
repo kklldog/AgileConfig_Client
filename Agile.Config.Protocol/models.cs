@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Agile.Config.Protocol
+namespace AgileConfig.Protocol
 {
     public class ConfigItem
     {

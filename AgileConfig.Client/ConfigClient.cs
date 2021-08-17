@@ -1,5 +1,4 @@
-﻿using Agile.Config.Protocol;
-using AgileConfig.Client;
+﻿using AgileConfig.Protocol;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -13,7 +12,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-namespace Agile.Config.Client
+namespace AgileConfig.Client
 {
     public enum ConnectStatus
     {
@@ -313,7 +312,7 @@ namespace Agile.Config.Client
             }
             _isAutoReConnecting = true;
 
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 while (true)
                 {
@@ -348,7 +347,7 @@ namespace Agile.Config.Client
                         Logger?.LogError(ex, "AgileConfig Client Websocket try to connected to server failed.");
                     }
                 }
-            });
+            }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
 
         private string GenerateBasicAuthorization(string appId, string secret)
@@ -369,7 +368,7 @@ namespace Agile.Config.Client
             }
             _isWsHeartbeating = true;
 
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 var data = Encoding.UTF8.GetBytes("ping");
                 while (true)
@@ -394,7 +393,7 @@ namespace Agile.Config.Client
                         }
                     }
                 }
-            });
+            }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
         /// <summary>
         /// 开启一个线程对服务端推送的websocket message进行处理
@@ -402,7 +401,7 @@ namespace Agile.Config.Client
         /// <returns></returns>
         private void HandleWebsocketMessageAsync()
         {
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 while (_WebsocketClient?.State == WebSocketState.Open)
                 {
@@ -424,7 +423,7 @@ namespace Agile.Config.Client
                     }
                     ProcessMessage(result, buffer);
                 }
-            });
+            }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
 
         /// <summary>
