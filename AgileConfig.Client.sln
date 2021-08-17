@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgileConfigWPFSample", "Agi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AgileConfigMVCSampleNET5", "AgileConfigMVCSampleNET5\AgileConfigMVCSampleNET5.csproj", "{503AFD2A-3ED4-490B-96C0-0CB01592149A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnFrameworkTest", "OnFrameworkTest\OnFrameworkTest.csproj", "{278206BE-F59F-4D3F-A5C5-6A11B52E3A3B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{503AFD2A-3ED4-490B-96C0-0CB01592149A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{503AFD2A-3ED4-490B-96C0-0CB01592149A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{503AFD2A-3ED4-490B-96C0-0CB01592149A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{278206BE-F59F-4D3F-A5C5-6A11B52E3A3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{278206BE-F59F-4D3F-A5C5-6A11B52E3A3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{278206BE-F59F-4D3F-A5C5-6A11B52E3A3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{278206BE-F59F-4D3F-A5C5-6A11B52E3A3B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -72,6 +78,7 @@ Global
 		{FE1A5128-57CD-46D9-AB4C-A82FAE0629DD} = {CE91E81A-309C-42A9-B7C8-69347A8E8570}
 		{BD712444-47C5-4EB4-AEF0-C8E1D0A7ED08} = {CE91E81A-309C-42A9-B7C8-69347A8E8570}
 		{503AFD2A-3ED4-490B-96C0-0CB01592149A} = {CE91E81A-309C-42A9-B7C8-69347A8E8570}
+		{278206BE-F59F-4D3F-A5C5-6A11B52E3A3B} = {CE91E81A-309C-42A9-B7C8-69347A8E8570}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9F4BE340-448F-4E99-A0BF-954634C87F42}
