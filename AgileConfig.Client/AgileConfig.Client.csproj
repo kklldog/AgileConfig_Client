@@ -8,10 +8,9 @@
     <Description>A client for AgileConfig .</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kklldog/AgileConfig</PackageProjectUrl>
-    <AssemblyVersion>1.1.8.10</AssemblyVersion>
-    <FileVersion>1.1.8.10</FileVersion>
-    <PackageReleaseNotes>1. 无限循环改用 Task LongRunning 模式
-2. 统一了namespace</PackageReleaseNotes>
+    <AssemblyVersion>1.1.8.11</AssemblyVersion>
+    <FileVersion>1.1.8.11</FileVersion>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

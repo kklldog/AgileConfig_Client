@@ -20,7 +20,7 @@ namespace OnFrameworkTest
 
             client.ConnectAsync().GetAwaiter().GetResult();
 
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 while (true)
                 {
@@ -32,7 +32,7 @@ namespace OnFrameworkTest
                         Console.WriteLine("{0} : {1}", key, val);
                     }
                 }
-            });
+            }, TaskCreationOptions.LongRunning);
 
             Console.ReadLine();
 
