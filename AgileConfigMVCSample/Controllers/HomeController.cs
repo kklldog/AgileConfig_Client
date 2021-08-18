@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using AgileConfig.Client;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using AgileConfigMVCSample.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using Agile.Config.Client;
 
 namespace AgileConfigMVCSample.Controllers
 {

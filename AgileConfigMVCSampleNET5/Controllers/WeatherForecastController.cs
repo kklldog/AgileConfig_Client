@@ -1,11 +1,11 @@
-﻿using Agile.Config.Client;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AgileConfig.Client;
 
 namespace AgileConfigMVCSampleNET5.Controllers
 {

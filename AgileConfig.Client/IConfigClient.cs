@@ -1,10 +1,10 @@
-﻿using Agile.Config.Protocol;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using AgileConfig.Protocol;
 
-namespace Agile.Config.Client
+namespace AgileConfig.Client
 {
     public class ConfigChangedArg
     {

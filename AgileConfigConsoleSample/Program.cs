@@ -1,6 +1,6 @@
-﻿using Agile.Config.Client;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using AgileConfig.Client;
 
 namespace AgileConfigConsoleSample
 {
