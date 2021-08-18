@@ -1,4 +1,4 @@
-﻿using Agile.Config.Client;
+﻿using AgileConfig.Client;
 using Microsoft.Extensions.Configuration;
 using System;
 
