@@ -1,8 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using AgileConfig.Client;
+using Microsoft.Extensions.Configuration;
 using System;
 
-namespace AgileConfig.Client
+namespace Microsoft.AspNetCore.Hosting
 {
     public static class AgileConfitBuilderExt
     {
