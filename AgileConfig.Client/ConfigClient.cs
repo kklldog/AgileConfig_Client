@@ -1,5 +1,4 @@
-﻿using Agile.Config.Protocol;
-using AgileConfig.Client;
+﻿using AgileConfig.Protocol;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -13,8 +12,15 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-namespace Agile.Config.Client
+namespace AgileConfig.Client
 {
+    public enum ConnectStatus
+    {
+        Disconnected,
+        Connecting,
+        Connected,
+    }
+
     public class ConfigClient : IConfigClient
     {
         public static IConfigClient Instance = null;
@@ -125,6 +131,8 @@ namespace Agile.Config.Client
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
 
+        public ConnectStatus Status { get; private set; }
+
         public string Name
         {
             get;
@@ -196,19 +204,33 @@ namespace Agile.Config.Client
         /// <returns></returns>
         public async Task<bool> ConnectAsync()
         {
-            if (_WebsocketClient?.State == WebSocketState.Open)
+            if (this.Status == ConnectStatus.Connected 
+                || this.Status == ConnectStatus.Connecting 
+                || _WebsocketClient?.State == WebSocketState.Open)
             {
                 return true;
+            }
+            else
+            {
+                _WebsocketClient?.Abort();
+                _WebsocketClient?.Dispose();
+                _WebsocketClient = default;
+                this.Status = ConnectStatus.Disconnected;
             }
 
             if (_WebsocketClient == null)
             {
+                this.Status = ConnectStatus.Connecting;
                 _WebsocketClient = new ClientWebSocket();
             }
+
             var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
-            Load();
-            HandleWebsocketMessageAsync();
-            WebsocketHeartbeatAsync();
+            Load();//不管websocket是否成功，都去拉一次配置
+            if (connected)
+            {
+                HandleWebsocketMessageAsync();
+                WebsocketHeartbeatAsync();
+            }
             //设置自动重连
             AutoReConnect();
 
@@ -217,6 +239,7 @@ namespace Agile.Config.Client
 
         private async Task<bool> TryConnectWebsocketAsync(ClientWebSocket client)
         {
+            this.Status = ConnectStatus.Connecting;
             var clientName = string.IsNullOrEmpty(Name) ? "" : System.Web.HttpUtility.UrlEncode(Name);
             var tag = string.IsNullOrEmpty(Tag) ? "" : System.Web.HttpUtility.UrlEncode(Tag);
 
@@ -250,18 +273,19 @@ namespace Agile.Config.Client
                 }
                 catch (Exception e)
                 {
-                    Logger?.LogError(e, "AgileConfig Client Websocket try connect to server occur error .");
-
                     failCount++;
+                    Logger?.LogError(e, "AgileConfig Client Websocket try connect to server occur error .");
                 }
             }
 
             if (failCount == randomServer.ServerCount)
             {
                 //连接所有的服务器都失败了。
+                this.Status = ConnectStatus.Disconnected;
                 return false;
             }
 
+            this.Status = ConnectStatus.Connected;
             return true;
         }
 
@@ -288,7 +312,7 @@ namespace Agile.Config.Client
             }
             _isAutoReConnecting = true;
 
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 while (true)
                 {
@@ -302,6 +326,7 @@ namespace Agile.Config.Client
                     {
                         _WebsocketClient?.Abort();
                         _WebsocketClient?.Dispose();
+                        this.Status = ConnectStatus.Disconnected;
 
                         if (_adminSayOffline)
                         {
@@ -322,7 +347,7 @@ namespace Agile.Config.Client
                         Logger?.LogError(ex, "AgileConfig Client Websocket try to connected to server failed.");
                     }
                 }
-            });
+            }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
 
         private string GenerateBasicAuthorization(string appId, string secret)
@@ -343,7 +368,7 @@ namespace Agile.Config.Client
             }
             _isWsHeartbeating = true;
 
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 var data = Encoding.UTF8.GetBytes("ping");
                 while (true)
@@ -368,7 +393,7 @@ namespace Agile.Config.Client
                         }
                     }
                 }
-            });
+            }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
         /// <summary>
         /// 开启一个线程对服务端推送的websocket message进行处理
@@ -376,7 +401,7 @@ namespace Agile.Config.Client
         /// <returns></returns>
         private void HandleWebsocketMessageAsync()
         {
-            Task.Run(async () =>
+            Task.Factory.StartNew(async () =>
             {
                 while (_WebsocketClient?.State == WebSocketState.Open)
                 {
@@ -398,7 +423,7 @@ namespace Agile.Config.Client
                     }
                     ProcessMessage(result, buffer);
                 }
-            });
+            }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -463,6 +488,7 @@ namespace Agile.Config.Client
                                     case ActionConst.Offline:
                                         _adminSayOffline = true;
                                         await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
+                                        this.Status = ConnectStatus.Disconnected;
                                         Logger?.LogTrace("Websocket client offline because admin console send a command 'offline' ,");
                                         NoticeChangedAsync(ActionConst.Offline);
                                         break;
@@ -486,13 +512,13 @@ namespace Agile.Config.Client
             }
         }
 
-        private Task NoticeChangedAsync(string action, string key = "")
+        private void NoticeChangedAsync(string action, string key = "")
         {
             if (ConfigChanged == null)
             {
-                return Task.CompletedTask;
+                return;
             }
-            return Task.Run(() =>
+            Task.Run(() =>
             {
                 ConfigChanged(new ConfigChangedArg(action, key));
             });

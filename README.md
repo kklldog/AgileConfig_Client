@@ -5,6 +5,9 @@ AgileConfig的客户端，.net core standard2.0实现，core跟framework的.net�
 ```
 Install-Package AgileConfig.Client
 ```
+
+☢️如果你的程序是framework的程序请使用[frameworkVersion](https://github.com/kklldog/AgileConfig_Client/tree/frameworkVersion)分支的代码自己编译。使用master版本有可能死锁造成cpu100% ☢️
+
 ### 初始化客户端
 以asp.net core mvc项目为例：
 ```

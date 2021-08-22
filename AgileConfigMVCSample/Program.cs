@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Agile.Config.Client;
-using Agile.Config.Protocol;
+using AgileConfig.Client;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using System;
 
 namespace AgileConfigMVCSample
 {
@@ -25,12 +18,12 @@ namespace AgileConfigMVCSample
             Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((context, config) =>
             {
-                //newÒ»¸öclientÊµÀý
-                //Ê¹ÓÃÎÞ²Î¹¹Ôìº¯Êý»á×Ô¶¯¶ÁÈ¡±¾µØappsettings.jsonÎÄ¼þµÄAgileConfig½ÚµãµÄÅäÖÃ
+                //newä¸€ä¸ªclientå®žä¾‹
+                //ä½¿ç”¨æ— å‚æž„é€ å‡½æ•°ä¼šè‡ªåŠ¨è¯»å–æœ¬åœ°appsettings.jsonæ–‡ä»¶çš„AgileConfigèŠ‚ç‚¹çš„é…ç½®
                 var configClient = new ConfigClient();
-                //Ê¹ÓÃAddAgileConfigÅäÖÃÒ»¸öÐÂµÄIConfigurationSource
+                //ä½¿ç”¨AddAgileConfigé…ç½®ä¸€ä¸ªæ–°çš„IConfigurationSource
                 config.AddAgileConfig(configClient);
-                //×¢²áÅäÖÃÏîÐÞ¸ÄÊÂ¼þ
+                //æ³¨å†Œé…ç½®é¡¹ä¿®æ”¹äº‹ä»¶
                 configClient.ConfigChanged += (arg) =>
                 {
                     Console.WriteLine($"action:{arg.Action} key:{arg.Key}");

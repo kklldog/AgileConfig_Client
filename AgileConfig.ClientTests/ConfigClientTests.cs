@@ -3,7 +3,8 @@ using Agile.Config.Client;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Agile.Config.Protocol;
+using AgileConfig.Client;
+using AgileConfig.Protocol;
 
 namespace Agile.Config.Client.Tests
 {
