@@ -2,7 +2,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.ConfigureAppConfiguration((_, bd) => {
     bd.AddAgileConfig(e => {
-        Console.WriteLine($"configs {e.Action}");
     });
 });
 

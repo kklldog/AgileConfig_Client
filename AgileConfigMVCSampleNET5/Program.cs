@@ -17,12 +17,7 @@ namespace AgileConfigMVCSampleNET5
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-            .ConfigureAppConfiguration((_,config)=> {
-                config.AddAgileConfig((arg) =>
-                {
-                    Console.WriteLine($"action:{arg.Action} key:{arg.Key}");
-                });
-            })
+                .UseAgileConfig(e => Console.WriteLine($"configs {e.Action}"))
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
