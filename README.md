@@ -50,6 +50,16 @@ Install-Package AgileConfig.Client
 ```
 在program的ConfigureAppConfiguration方法内使用AddAgileConfig添加一个配置源。
 ```
+ public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .UseAgileConfig(e => Console.WriteLine($"configs {e.Action}"))
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
+```
+或者使用UseAgileConfig扩展方法。
+```
      public void ConfigureServices(IServiceCollection services)
         {
             services.AddAgileConfig();
@@ -60,16 +70,6 @@ Install-Package AgileConfig.Client
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "AgileConfigMVCSampleNET5", Version = "v1" });
             });
         }
-```
-或者使用UseAgileConfig扩展方法。
-```
- public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .UseAgileConfig(e => Console.WriteLine($"configs {e.Action}"))
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
 ```
 如果需要使用ConfigClient的实例来直接读取配置，可以在startup类的ConfigureServices方法内配置AddAgileConfig，以便使用IConfigClient接口直接注入ConfigClient的实例。
 ## 读取配置
