@@ -61,6 +61,16 @@ Install-Package AgileConfig.Client
             });
         }
 ```
+或者使用UseAgileConfig扩展方法。
+```
+ public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .UseAgileConfig(e => Console.WriteLine($"configs {e.Action}"))
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
+```
 如果需要使用ConfigClient的实例来直接读取配置，可以在startup类的ConfigureServices方法内配置AddAgileConfig，以便使用IConfigClient接口直接注入ConfigClient的实例。
 ## 读取配置
 AgileConfig支持asp.net core 标准的IConfiguration，跟IOptions模式读取配置。还支持直接通过AgileConfigClient实例直接读取：
