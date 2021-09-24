@@ -9,7 +9,8 @@ Install-Package AgileConfig.Client
 ☢️如果你的程序是framework的程序请使用[frameworkVersion](https://github.com/kklldog/AgileConfig_Client/tree/frameworkVersion)分支的代码自己编译。使用master版本有可能死锁造成cpu100% ☢️
 
 ### 初始化客户端
-以asp.net core mvc项目为例：
+以asp.net core mvc项目为例：   
+在appsettings.json文件内配置agileconfig的连接信息。
 ```
 {
   "Logging": {
@@ -32,7 +33,7 @@ Install-Package AgileConfig.Client
 }
 
 ```
-在appsettings.json文件内配置agileconfig的连接信息。
+在program的ConfigureAppConfiguration方法内使用AddAgileConfig添加一个配置源。
 ```
        public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
@@ -48,7 +49,7 @@ Install-Package AgileConfig.Client
                     webBuilder.UseStartup<Startup>();
                 });
 ```
-在program的ConfigureAppConfiguration方法内使用AddAgileConfig添加一个配置源。
+或者使用UseAgileConfig扩展方法。
 ```
  public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
@@ -58,7 +59,7 @@ Install-Package AgileConfig.Client
                     webBuilder.UseStartup<Startup>();
                 });
 ```
-或者使用UseAgileConfig扩展方法。
+如果需要使用ConfigClient的实例来直接读取配置，可以在startup类的ConfigureServices方法内配置AddAgileConfig，以便使用IConfigClient接口直接注入ConfigClient的实例。
 ```
      public void ConfigureServices(IServiceCollection services)
         {
@@ -71,7 +72,7 @@ Install-Package AgileConfig.Client
             });
         }
 ```
-如果需要使用ConfigClient的实例来直接读取配置，可以在startup类的ConfigureServices方法内配置AddAgileConfig，以便使用IConfigClient接口直接注入ConfigClient的实例。
+
 ## 读取配置
 AgileConfig支持asp.net core 标准的IConfiguration，跟IOptions模式读取配置。还支持直接通过AgileConfigClient实例直接读取：
 ```
