@@ -44,6 +44,7 @@ namespace AgileConfig.Client
             var serverNodes = localconfig["AgileConfig:nodes"];
             var name = localconfig["AgileConfig:name"];
             var tag = localconfig["AgileConfig:tag"];
+            var env = localconfig["AgileConfig:env"];
 
             if (string.IsNullOrEmpty(appId))
             {
@@ -58,6 +59,7 @@ namespace AgileConfig.Client
             this._AppId = appId;
             this._Secret = secret;
             this._ServerNodes = serverNodes;
+            this._Env = string.IsNullOrEmpty(env) ? "DEV" : env.ToUpper();
         }
 
         public ConfigClient(IConfiguration configuration, ILogger logger = null)
@@ -81,6 +83,7 @@ namespace AgileConfig.Client
             var serverNodes = children.FirstOrDefault(x => string.Equals(x.Key, "nodes", StringComparison.OrdinalIgnoreCase))?.Value;
             var name = children.FirstOrDefault(x => string.Equals(x.Key, "name", StringComparison.OrdinalIgnoreCase))?.Value;
             var tag = children.FirstOrDefault(x => string.Equals(x.Key, "tag", StringComparison.OrdinalIgnoreCase))?.Value;
+            var env = children.FirstOrDefault(x => string.Equals(x.Key, "env", StringComparison.OrdinalIgnoreCase))?.Value;
 
             if (string.IsNullOrEmpty(appId))
             {
@@ -97,9 +100,10 @@ namespace AgileConfig.Client
             this._AppId = appId;
             this._Secret = secret;
             this._ServerNodes = serverNodes;
+            this._Env = string.IsNullOrEmpty(env) ? "DEV" : env.ToUpper();
         }
 
-        public ConfigClient(string appId, string secret, string serverNodes, ILogger logger = null)
+        public ConfigClient(string appId, string secret, string serverNodes, string env, ILogger logger = null)
         {
             this.Logger = logger;
             if (string.IsNullOrEmpty(appId))
@@ -113,17 +117,18 @@ namespace AgileConfig.Client
             this._AppId = appId;
             this._Secret = secret;
             this._ServerNodes = serverNodes;
+            this._Env = string.IsNullOrEmpty(env) ? "DEV" : env.ToUpper();
         }
 
         private int _WebsocketReconnectInterval = 5;
         private int _WebsocketHeartbeatInterval = 30;
 
-        public ILogger Logger { get; set; }
         private string _ServerNodes;
         private string _AppId;
         private string _Secret;
         private bool _isAutoReConnecting = false;
         private bool _isWsHeartbeating = false;
+        private string _Env;
 
         private ClientWebSocket _WebsocketClient;
         private bool _adminSayOffline = false;
@@ -131,7 +136,36 @@ namespace AgileConfig.Client
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
 
+        public ILogger Logger { get; set; }
         public ConnectStatus Status { get; private set; }
+
+        public string ServerNodes { 
+            get
+            {
+                return _ServerNodes;
+            }
+        }
+        public string AppId
+        {
+            get
+            {
+                return _AppId;
+            }
+        }
+        public string Secret
+        {
+            get
+            {
+                return _Secret;
+            }
+        }
+        public string Env
+        {
+            get
+            {
+                return _Env;
+            }
+        }
 
         public string Name
         {
@@ -204,8 +238,8 @@ namespace AgileConfig.Client
         /// <returns></returns>
         public async Task<bool> ConnectAsync()
         {
-            if (this.Status == ConnectStatus.Connected 
-                || this.Status == ConnectStatus.Connecting 
+            if (this.Status == ConnectStatus.Connected
+                || this.Status == ConnectStatus.Connecting
                 || _WebsocketClient?.State == WebSocketState.Open)
             {
                 return true;
@@ -244,6 +278,7 @@ namespace AgileConfig.Client
             var tag = string.IsNullOrEmpty(Tag) ? "" : System.Web.HttpUtility.UrlEncode(Tag);
 
             client.Options.SetRequestHeader("appid", _AppId);
+            client.Options.SetRequestHeader("env", _Env);
             client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(_AppId, _Secret));
 
             var randomServer = new RandomServers(_ServerNodes);
@@ -266,9 +301,10 @@ namespace AgileConfig.Client
                     websocketServerUrl += "?";
                     websocketServerUrl += "client_name=" + clientName;
                     websocketServerUrl += "&client_tag=" + tag;
-                    Logger?.LogTrace("AgileConfig Client Websocket try connect to server {0}", websocketServerUrl);
+
+                    Logger?.LogTrace("AgileConfig Client Websocket try connect to server by url {0}", websocketServerUrl);
                     await client.ConnectAsync(new Uri(websocketServerUrl), CancellationToken.None).ConfigureAwait(false);
-                    Logger?.LogTrace("AgileConfig Client Websocket Connected server {0}", websocketServerUrl);
+                    Logger?.LogTrace("AgileConfig Client Websocket Connected server  by url {0}", websocketServerUrl);
                     break;
                 }
                 catch (Exception e)
@@ -556,7 +592,7 @@ namespace AgileConfig.Client
                             {"Authorization", GenerateBasicAuthorization(_AppId, _Secret) }
                         }
                     };
-                    var apiUrl = url + (url.EndsWith("/") ? "" : "/") + $"api/config/app/{_AppId}";
+                    var apiUrl = url + (url.EndsWith("/") ? "" : "/") + $"api/config/app/{_AppId}/{_Env}";
                     using (var result = AgileHttp.HTTP.Send(apiUrl, "GET", null, op))
                     {
                         if (result.StatusCode == System.Net.HttpStatusCode.OK)
