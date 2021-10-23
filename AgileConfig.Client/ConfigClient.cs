@@ -592,7 +592,7 @@ namespace AgileConfig.Client
                             {"Authorization", GenerateBasicAuthorization(_AppId, _Secret) }
                         }
                     };
-                    var apiUrl = url + (url.EndsWith("/") ? "" : "/") + $"api/config/app/{_AppId}/{_Env}";
+                    var apiUrl = url + (url.EndsWith("/") ? "" : "/") + $"api/config/app/{_AppId}?env={_Env}";
                     using (var result = AgileHttp.HTTP.Send(apiUrl, "GET", null, op))
                     {
                         if (result.StatusCode == System.Net.HttpStatusCode.OK)
