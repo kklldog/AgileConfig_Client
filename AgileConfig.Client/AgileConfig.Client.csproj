@@ -2,15 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Authors>mj.zhou</Authors>
-    <Version>1.2.1</Version>
+    <Authors>mj.zhou;ncc</Authors>
+    <Version>1.2.1.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>A client for AgileConfig .</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kklldog/AgileConfig</PackageProjectUrl>
-    <AssemblyVersion>1.2.1</AssemblyVersion>
-    <FileVersion>1.2.1</FileVersion>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <AssemblyVersion>1.2.1.1</AssemblyVersion>
+    <FileVersion>1.2.1.1</FileVersion>
+    <PackageReleaseNotes>author add ncc tag .</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
