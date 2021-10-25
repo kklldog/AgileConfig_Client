@@ -59,7 +59,7 @@ namespace AgileConfig.Client
             this._AppId = appId;
             this._Secret = secret;
             this._ServerNodes = serverNodes;
-            this._Env = string.IsNullOrEmpty(env) ? "DEV" : env.ToUpper();
+            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
         }
 
         public ConfigClient(IConfiguration configuration, ILogger logger = null)
@@ -100,7 +100,7 @@ namespace AgileConfig.Client
             this._AppId = appId;
             this._Secret = secret;
             this._ServerNodes = serverNodes;
-            this._Env = string.IsNullOrEmpty(env) ? "DEV" : env.ToUpper();
+            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
         }
 
         public ConfigClient(string appId, string secret, string serverNodes, string env, ILogger logger = null)
@@ -117,7 +117,7 @@ namespace AgileConfig.Client
             this._AppId = appId;
             this._Secret = secret;
             this._ServerNodes = serverNodes;
-            this._Env = string.IsNullOrEmpty(env) ? "DEV" : env.ToUpper();
+            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
         }
 
         private int _WebsocketReconnectInterval = 5;
