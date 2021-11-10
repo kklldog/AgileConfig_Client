@@ -126,7 +126,7 @@ namespace Agile.Config.Client
         private bool _isAutoReConnecting = false;
         private bool _isWsHeartbeating = false;
 
-        private ClientWebSocket _WebsocketClient;
+        private WebSocket4Net.WebSocket _WebsocketClient;
         private bool _adminSayOffline = false;
         private bool _isLoadFromLocal = false;
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -207,29 +207,21 @@ namespace Agile.Config.Client
         {
             if (this.Status == ConnectStatus.Connected 
                 || this.Status == ConnectStatus.Connecting 
-                || _WebsocketClient?.State == WebSocketState.Open)
+                || _WebsocketClient?.State == WebSocket4Net.WebSocketState.Open)
             {
                 return true;
             }
             else
             {
-                _WebsocketClient?.Abort();
                 _WebsocketClient?.Dispose();
                 _WebsocketClient = default;
                 this.Status = ConnectStatus.Disconnected;
             }
 
-            if (_WebsocketClient == null)
-            {
-                this.Status = ConnectStatus.Connecting;
-                _WebsocketClient = new ClientWebSocket();
-            }
-
-            var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
+            var connected = await TryConnectWebsocketAsync().ConfigureAwait(false);
             Load();//不管websocket是否成功，都去拉一次配置
             if (connected)
             {
-                HandleWebsocketMessageAsync();
                 WebsocketHeartbeatAsync();
             }
             //设置自动重连
@@ -238,14 +230,19 @@ namespace Agile.Config.Client
             return connected;
         }
 
-        private async Task<bool> TryConnectWebsocketAsync(ClientWebSocket client)
+        private async Task<bool> TryConnectWebsocketAsync()
         {
             this.Status = ConnectStatus.Connecting;
             var clientName = string.IsNullOrEmpty(Name) ? "" : System.Web.HttpUtility.UrlEncode(Name);
             var tag = string.IsNullOrEmpty(Tag) ? "" : System.Web.HttpUtility.UrlEncode(Tag);
 
-            client.Options.SetRequestHeader("appid", _AppId);
-            client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(_AppId, _Secret));
+
+            //client.Options.SetRequestHeader("appid", _AppId);
+            //client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(_AppId, _Secret));
+
+            var headers = new List<KeyValuePair<string, string>>();
+            headers.Add(new KeyValuePair<string, string>("appid", _AppId));
+            headers.Add(new KeyValuePair<string, string>("Authorization", GenerateBasicAuthorization(_AppId, _Secret)));
 
             var randomServer = new RandomServers(_ServerNodes);
             int failCount = 0;
@@ -268,8 +265,31 @@ namespace Agile.Config.Client
                     websocketServerUrl += "client_name=" + clientName;
                     websocketServerUrl += "&client_tag=" + tag;
                     Logger?.LogTrace("AgileConfig Client Websocket try connect to server {0}", websocketServerUrl);
-                    await client.ConnectAsync(new Uri(websocketServerUrl), CancellationToken.None).ConfigureAwait(false);
-                    Logger?.LogTrace("AgileConfig Client Websocket Connected server {0}", websocketServerUrl);
+
+                    if (_WebsocketClient == null)
+                    {
+                        _WebsocketClient = new WebSocket4Net.WebSocket(websocketServerUrl, "", null, headers);
+                    }
+                    var conn_result = await _WebsocketClient.OpenAsync().ConfigureAwait(false);
+                    Logger?.LogTrace("AgileConfig Client Websocket server {0} {1}", websocketServerUrl, conn_result? "success":"failed");
+                    if (!conn_result)
+                    {
+                        _WebsocketClient?.Dispose();
+                        _WebsocketClient = null;
+                        throw new Exception($"websocket client try to connect to {websocketServerUrl} failed .");
+                    }
+                    else
+                    {
+                        _WebsocketClient.MessageReceived += _WebsocketClient_MessageReceived;
+                        _WebsocketClient.Closed += (s, e) =>
+                        {
+                            Logger?.LogTrace("websocket client closed .");
+                        };
+                        _WebsocketClient.Error += (s, e) =>
+                        {
+                            Logger?.LogError(e.Exception, "websocket client occur error ." );
+                        };
+                    }
                     break;
                 }
                 catch (Exception e)
@@ -288,6 +308,14 @@ namespace Agile.Config.Client
 
             this.Status = ConnectStatus.Connected;
             return true;
+        }
+
+        private void _WebsocketClient_MessageReceived(object sender, WebSocket4Net.MessageReceivedEventArgs e)
+        {
+            Task.Run(async () =>
+            {
+                await ProcessMessage(e?.Message);
+            });
         }
 
         private void LoadConfigsFromLoacl()
@@ -319,15 +347,15 @@ namespace Agile.Config.Client
                 {
                     Thread.Sleep(1000 * _WebsocketReconnectInterval);
 
-                    if (_WebsocketClient?.State == WebSocketState.Open)
+                    if (_WebsocketClient?.State == WebSocket4Net.WebSocketState.Open || _WebsocketClient?.State == WebSocket4Net.WebSocketState.Connecting)
                     {
                         continue;
                     }
 
                     try
                     {
-                        _WebsocketClient?.Abort();
                         _WebsocketClient?.Dispose();
+                        _WebsocketClient = null;
                         this.Status = ConnectStatus.Disconnected;
 
                         if (_adminSayOffline)
@@ -335,12 +363,10 @@ namespace Agile.Config.Client
                             break;
                         }
 
-                        _WebsocketClient = new ClientWebSocket();
-                        var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
+                        var connected = await TryConnectWebsocketAsync().ConfigureAwait(false);
                         if (connected)
                         {
                             Load();
-                            HandleWebsocketMessageAsync();
                             WebsocketHeartbeatAsync();
                         }
                     }
@@ -371,9 +397,8 @@ namespace Agile.Config.Client
             }
             _isWsHeartbeating = true;
 
-            new Thread(async () =>
+            new Thread( () =>
             {
-                var data = Encoding.UTF8.GetBytes("ping");
                 while (true)
                 {
                     Thread.Sleep(1000 * _WebsocketHeartbeatInterval);
@@ -381,13 +406,12 @@ namespace Agile.Config.Client
                     {
                         break;
                     }
-                    if (_WebsocketClient?.State == WebSocketState.Open)
+                    if (_WebsocketClient?.State == WebSocket4Net.WebSocketState.Open)
                     {
                         try
                         {
                             //这里由于多线程的问题，WebsocketClient有可能在上一个if判断成功后被置空或者断开，所以需要try一下避免线程退出
-                            await _WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
-                                CancellationToken.None).ConfigureAwait(false);
+                            _WebsocketClient.Send("ping");
                             Logger?.LogTrace("AgileConfig Client Say 'ping' by Websocket .");
                         }
                         catch (Exception ex)
@@ -398,120 +422,79 @@ namespace Agile.Config.Client
                 }
             }).Start();
         }
-        /// <summary>
-        /// 开启一个线程对服务端推送的websocket message进行处理
-        /// </summary>
-        /// <returns></returns>
-        private void HandleWebsocketMessageAsync()
-        {
-            new Thread(async () =>
-            {
-                while (_WebsocketClient?.State == WebSocketState.Open)
-                {
-                    ArraySegment<Byte> buffer = new ArraySegment<byte>(new Byte[1024 * 2]);
-                    WebSocketReceiveResult result = null;
-                    try
-                    {
-                        result = await _WebsocketClient.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger?.LogError(ex, "AgileConfig Client Websocket try to ReceiveAsync message occur exception .");
-                        throw;
-                    }
-                    if (result != null && result.CloseStatus.HasValue)
-                    {
-                        Logger?.LogTrace("AgileConfig Client Websocket closed , {0} .", result.CloseStatusDescription);
-                        break;
-                    }
-                    ProcessMessage(result, buffer);
-                }
-            }).Start();
-        }
+
 
         /// <summary>
         /// 最终处理服务端推送的消息
         /// </summary>
-        private async void ProcessMessage(WebSocketReceiveResult result, ArraySegment<Byte> buffer)
+        private async Task ProcessMessage(string msg)
         {
-            using (var ms = new MemoryStream())
+            Logger?.LogTrace("AgileConfig Client Receive message ' {0} ' by Websocket .", msg);
+            if (string.IsNullOrEmpty(msg) || msg == "0")
             {
-                ms.Write(buffer.Array, buffer.Offset, result.Count);
-                if (result.MessageType == WebSocketMessageType.Text)
+                return;
+            }
+            if (msg.StartsWith("V:"))
+            {
+                var version = msg.Substring(2, msg.Length - 2);
+                var localVersion = this.DataMd5Version();
+                if (version != localVersion)
                 {
-                    ms.Seek(0, SeekOrigin.Begin);
-                    using (var reader = new StreamReader(ms, Encoding.UTF8))
+                    //如果数据库版本跟本地版本不一致则直接全部更新
+                    Load();
+                }
+                return;
+            }
+            try
+            {
+                var action = JsonConvert.DeserializeObject<WebsocketAction>(msg);
+                if (action != null)
+                {
+                    var dict = Data;
+                    var itemKey = "";
+                    if (action.Item != null)
                     {
-                        var msg = await reader.ReadToEndAsync().ConfigureAwait(false);
-                        Logger?.LogTrace("AgileConfig Client Receive message ' {0} ' by Websocket .", msg);
-                        if (string.IsNullOrEmpty(msg) || msg == "0")
-                        {
-                            return;
-                        }
-                        if (msg.StartsWith("V:"))
-                        {
-                            var version = msg.Substring(2, msg.Length - 2);
-                            var localVersion = this.DataMd5Version();
-                            if (version != localVersion)
+                        itemKey = GenerateKey(action.Item);
+                    }
+                    switch (action.Action)
+                    {
+                        case ActionConst.Add:
+                            dict.AddOrUpdate(itemKey, action.Item.value, (k, v) => { return action.Item.value; });
+                            NoticeChangedAsync(ActionConst.Add, itemKey);
+                            break;
+                        case ActionConst.Update:
+                            if (action.OldItem != null)
                             {
-                                //如果数据库版本跟本地版本不一致则直接全部更新
-                                Load();
+                                dict.TryRemove(GenerateKey(action.OldItem), out string oldV);
                             }
-                            return;
-                        }
-                        try
-                        {
-                            var action = JsonConvert.DeserializeObject<WebsocketAction>(msg);
-                            if (action != null)
+                            dict.AddOrUpdate(itemKey, action.Item.value, (k, v) => { return action.Item.value; });
+                            NoticeChangedAsync(ActionConst.Update, itemKey);
+                            break;
+                        case ActionConst.Remove:
+                            dict.TryRemove(itemKey, out string oldV1);
+                            NoticeChangedAsync(ActionConst.Remove, itemKey);
+                            break;
+                        case ActionConst.Offline:
+                            _adminSayOffline = true;
+                            await _WebsocketClient.CloseAsync().ConfigureAwait(false);
+                            this.Status = ConnectStatus.Disconnected;
+                            Logger?.LogTrace("Websocket client offline because admin console send a command 'offline' ,");
+                            NoticeChangedAsync(ActionConst.Offline);
+                            break;
+                        case ActionConst.Reload:
+                            if (Load())
                             {
-                                var dict = Data as ConcurrentDictionary<string, string>;
-                                var itemKey = "";
-                                if (action.Item != null)
-                                {
-                                    itemKey = GenerateKey(action.Item);
-                                }
-                                switch (action.Action)
-                                {
-                                    case ActionConst.Add:
-                                        dict.AddOrUpdate(itemKey, action.Item.value, (k, v) => { return action.Item.value; });
-                                        NoticeChangedAsync(ActionConst.Add, itemKey);
-                                        break;
-                                    case ActionConst.Update:
-                                        if (action.OldItem != null)
-                                        {
-                                            dict.TryRemove(GenerateKey(action.OldItem), out string oldV);
-                                        }
-                                        dict.AddOrUpdate(itemKey, action.Item.value, (k, v) => { return action.Item.value; });
-                                        NoticeChangedAsync(ActionConst.Update, itemKey);
-                                        break;
-                                    case ActionConst.Remove:
-                                        dict.TryRemove(itemKey, out string oldV1);
-                                        NoticeChangedAsync(ActionConst.Remove, itemKey);
-                                        break;
-                                    case ActionConst.Offline:
-                                        _adminSayOffline = true;
-                                        await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
-                                        this.Status = ConnectStatus.Disconnected;
-                                        Logger?.LogTrace("Websocket client offline because admin console send a command 'offline' ,");
-                                        NoticeChangedAsync(ActionConst.Offline);
-                                        break;
-                                    case ActionConst.Reload:
-                                        if (Load())
-                                        {
-                                            NoticeChangedAsync(ActionConst.Reload);
-                                        };
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger?.LogError(ex, "Cannot handle websocket message {0}", msg);
-                        }
+                                NoticeChangedAsync(ActionConst.Reload);
+                            };
+                            break;
+                        default:
+                            break;
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "Cannot handle websocket message {0}", msg);
             }
         }
 
