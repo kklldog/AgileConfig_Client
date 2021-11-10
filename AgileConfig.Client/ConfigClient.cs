@@ -116,7 +116,7 @@ namespace Agile.Config.Client
             this._ServerNodes = serverNodes;
         }
 
-        private int _WebsocketReconnectInterval = 5;
+        private int _WebsocketReconnectInterval = 10;
         private int _WebsocketHeartbeatInterval = 30;
 
         public ILogger Logger { get; set; }
@@ -203,13 +203,13 @@ namespace Agile.Config.Client
         /// 连接服务端
         /// </summary>
         /// <returns></returns>
-        public async Task<bool> ConnectAsync()
+        public Task<bool> ConnectAsync()
         {
-            if (this.Status == ConnectStatus.Connected 
-                || this.Status == ConnectStatus.Connecting 
+            if (this.Status == ConnectStatus.Connected
+                || this.Status == ConnectStatus.Connecting
                 || _WebsocketClient?.State == WebSocket4Net.WebSocketState.Open)
             {
-                return true;
+                return Task.FromResult(true);
             }
             else
             {
@@ -218,96 +218,91 @@ namespace Agile.Config.Client
                 this.Status = ConnectStatus.Disconnected;
             }
 
-            var connected = await TryConnectWebsocketAsync().ConfigureAwait(false);
-            Load();//不管websocket是否成功，都去拉一次配置
-            if (connected)
+            TryConnectWebsocketAsync(new RandomServers(_ServerNodes), () =>
             {
                 WebsocketHeartbeatAsync();
+            },
+            () => {
             }
+            );
+            //不管websocket是否成功，都去拉一次配置
+            Load();
             //设置自动重连
             AutoReConnect();
 
-            return connected;
+            return Task.FromResult(this.Status == ConnectStatus.Connected);
         }
 
-        private async Task<bool> TryConnectWebsocketAsync()
+        private void TryConnectWebsocketAsync(RandomServers randomServers, Action connected, Action allServerTestFailed)
         {
             this.Status = ConnectStatus.Connecting;
-            var clientName = string.IsNullOrEmpty(Name) ? "" : System.Web.HttpUtility.UrlEncode(Name);
-            var tag = string.IsNullOrEmpty(Tag) ? "" : System.Web.HttpUtility.UrlEncode(Tag);
-
-
-            //client.Options.SetRequestHeader("appid", _AppId);
-            //client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(_AppId, _Secret));
-
             var headers = new List<KeyValuePair<string, string>>();
             headers.Add(new KeyValuePair<string, string>("appid", _AppId));
             headers.Add(new KeyValuePair<string, string>("Authorization", GenerateBasicAuthorization(_AppId, _Secret)));
 
-            var randomServer = new RandomServers(_ServerNodes);
-            int failCount = 0;
-            while (!randomServer.IsComplete)
+            try
             {
-                var server = randomServer.Next();
-                try
+                if (randomServers.IsComplete)
                 {
-                    var websocketServerUrl = "";
-                    if (server.StartsWith("https:", StringComparison.CurrentCultureIgnoreCase))
+                    if(allServerTestFailed != null)
                     {
-                        websocketServerUrl = server.Replace("https:", "wss:").Replace("HTTPS:", "wss:");
+                        allServerTestFailed();
+                        return;
                     }
-                    else
-                    {
-                        websocketServerUrl = server.Replace("http:", "ws:").Replace("HTTP:", "ws:");
-                    }
-                    websocketServerUrl = websocketServerUrl + (websocketServerUrl.EndsWith("/") ? "ws" : "/ws");
-                    websocketServerUrl += "?";
-                    websocketServerUrl += "client_name=" + clientName;
-                    websocketServerUrl += "&client_tag=" + tag;
-                    Logger?.LogTrace("AgileConfig Client Websocket try connect to server {0}", websocketServerUrl);
+                }
 
-                    if (_WebsocketClient == null)
-                    {
-                        _WebsocketClient = new WebSocket4Net.WebSocket(websocketServerUrl, "", null, headers);
-                    }
-                    var conn_result = await _WebsocketClient.OpenAsync().ConfigureAwait(false);
-                    Logger?.LogTrace("AgileConfig Client Websocket server {0} {1}", websocketServerUrl, conn_result? "success":"failed");
-                    if (!conn_result)
-                    {
-                        _WebsocketClient?.Dispose();
-                        _WebsocketClient = null;
-                        throw new Exception($"websocket client try to connect to {websocketServerUrl} failed .");
-                    }
-                    else
-                    {
-                        _WebsocketClient.MessageReceived += _WebsocketClient_MessageReceived;
-                        _WebsocketClient.Closed += (s, e) =>
-                        {
-                            Logger?.LogTrace("websocket client closed .");
-                        };
-                        _WebsocketClient.Error += (s, e) =>
-                        {
-                            Logger?.LogError(e.Exception, "websocket client occur error ." );
-                        };
-                    }
-                    break;
-                }
-                catch (Exception e)
+                var server = randomServers.Next();
+                var websocketServerUrl = CreateWSUrl(server);
+               
+                Logger?.LogTrace("AgileConfig Client Websocket try connect to server {0}", websocketServerUrl);
+
+                _WebsocketClient = new WebSocket4Net.WebSocket(websocketServerUrl, "", null, headers);
+                _WebsocketClient.MessageReceived += _WebsocketClient_MessageReceived;
+                _WebsocketClient.Closed += (s, e) =>
                 {
-                    failCount++;
-                    Logger?.LogError(e, "AgileConfig Client Websocket try connect to server occur error .");
-                }
+                    this.Status = ConnectStatus.Disconnected;
+                    Logger?.LogTrace("websocket client closed .");
+                };
+                _WebsocketClient.Error += (s, e) =>
+                {
+                    TryConnectWebsocketAsync(randomServers, connected, allServerTestFailed);
+                    Logger?.LogError(e.Exception, "websocket client occur error .");
+                };
+                _WebsocketClient.Opened += (s, e) =>
+                {
+                    this.Status = ConnectStatus.Connected;
+                    if (connected != null)
+                    {
+                        connected();
+                    }
+                };
+                _WebsocketClient.Open();
             }
-
-            if (failCount == randomServer.ServerCount)
+            catch (Exception e)
             {
-                //连接所有的服务器都失败了。
-                this.Status = ConnectStatus.Disconnected;
-                return false;
+                Logger?.LogError(e, "AgileConfig Client Websocket try connect to server occur error .");
             }
+        }
 
-            this.Status = ConnectStatus.Connected;
-            return true;
+        private string CreateWSUrl(string serverUrl)
+        {
+            var clientName = string.IsNullOrEmpty(Name) ? "" : System.Web.HttpUtility.UrlEncode(Name);
+            var tag = string.IsNullOrEmpty(Tag) ? "" : System.Web.HttpUtility.UrlEncode(Tag);
+            var websocketServerUrl = "";
+            if (serverUrl.StartsWith("https:", StringComparison.CurrentCultureIgnoreCase))
+            {
+                websocketServerUrl = serverUrl.Replace("https:", "wss:").Replace("HTTPS:", "wss:");
+            }
+            else
+            {
+                websocketServerUrl = serverUrl.Replace("http:", "ws:").Replace("HTTP:", "ws:");
+            }
+            websocketServerUrl = websocketServerUrl + (websocketServerUrl.EndsWith("/") ? "ws" : "/ws");
+            websocketServerUrl += "?";
+            websocketServerUrl += "client_name=" + clientName;
+            websocketServerUrl += "&client_tag=" + tag;
+
+            return websocketServerUrl;
         }
 
         private void _WebsocketClient_MessageReceived(object sender, WebSocket4Net.MessageReceivedEventArgs e)
@@ -341,41 +336,41 @@ namespace Agile.Config.Client
             }
             _isAutoReConnecting = true;
 
-            Thread th = new Thread(async () =>
-            {
-                while (true)
-                {
-                    Thread.Sleep(1000 * _WebsocketReconnectInterval);
+            Thread th = new Thread(() =>
+           {
+               while (true)
+               {
+                   Thread.Sleep(1000 * _WebsocketReconnectInterval);
 
-                    if (_WebsocketClient?.State == WebSocket4Net.WebSocketState.Open || _WebsocketClient?.State == WebSocket4Net.WebSocketState.Connecting)
-                    {
-                        continue;
-                    }
+                   if (this.Status == ConnectStatus.Connected || this.Status == ConnectStatus.Connecting)
+                   {
+                       continue;
+                   }
 
-                    try
-                    {
-                        _WebsocketClient?.Dispose();
-                        _WebsocketClient = null;
-                        this.Status = ConnectStatus.Disconnected;
+                   try
+                   {
+                       _WebsocketClient?.Dispose();
+                       _WebsocketClient = null;
+                       this.Status = ConnectStatus.Disconnected;
 
-                        if (_adminSayOffline)
-                        {
-                            break;
-                        }
+                       if (_adminSayOffline)
+                       {
+                           break;
+                       }
 
-                        var connected = await TryConnectWebsocketAsync().ConfigureAwait(false);
-                        if (connected)
-                        {
-                            Load();
-                            WebsocketHeartbeatAsync();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger?.LogError(ex, "AgileConfig Client Websocket try to connected to server failed.");
-                    }
-                }
-            });
+                       TryConnectWebsocketAsync(new RandomServers(_ServerNodes), () =>
+                       {
+                           Load();
+                           WebsocketHeartbeatAsync();
+                       }, () => { 
+                       });
+                   }
+                   catch (Exception ex)
+                   {
+                       Logger?.LogError(ex, "AgileConfig Client Websocket try to connected to server failed.");
+                   }
+               }
+           });
             th.Start();
         }
 
@@ -397,30 +392,30 @@ namespace Agile.Config.Client
             }
             _isWsHeartbeating = true;
 
-            new Thread( () =>
-            {
-                while (true)
-                {
-                    Thread.Sleep(1000 * _WebsocketHeartbeatInterval);
-                    if (_adminSayOffline)
-                    {
-                        break;
-                    }
-                    if (_WebsocketClient?.State == WebSocket4Net.WebSocketState.Open)
-                    {
-                        try
-                        {
+            new Thread(() =>
+           {
+               while (true)
+               {
+                   Thread.Sleep(1000 * _WebsocketHeartbeatInterval);
+                   if (_adminSayOffline)
+                   {
+                       break;
+                   }
+                   if (_WebsocketClient?.State == WebSocket4Net.WebSocketState.Open)
+                   {
+                       try
+                       {
                             //这里由于多线程的问题，WebsocketClient有可能在上一个if判断成功后被置空或者断开，所以需要try一下避免线程退出
                             _WebsocketClient.Send("ping");
-                            Logger?.LogTrace("AgileConfig Client Say 'ping' by Websocket .");
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger?.LogError(ex, "AgileConfig Client Websocket try to send Heartbeat to server failed.");
-                        }
-                    }
-                }
-            }).Start();
+                           Logger?.LogTrace("AgileConfig Client Say 'ping' by Websocket .");
+                       }
+                       catch (Exception ex)
+                       {
+                           Logger?.LogError(ex, "AgileConfig Client Websocket try to send Heartbeat to server failed.");
+                       }
+                   }
+               }
+           }).Start();
         }
 
 
