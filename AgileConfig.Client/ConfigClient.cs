@@ -254,7 +254,7 @@ namespace Agile.Config.Client
                 var server = randomServers.Next();
                 var websocketServerUrl = CreateWSUrl(server);
                
-                Logger?.LogTrace("AgileConfig Client Websocket try connect to server {0}", websocketServerUrl);
+                Logger?.LogTrace("client try connect to server {0}", websocketServerUrl);
 
                 _WebsocketClient = new WebSocket4Net.WebSocket(websocketServerUrl, "", null, headers);
                 _WebsocketClient.MessageReceived += _WebsocketClient_MessageReceived;
@@ -280,7 +280,7 @@ namespace Agile.Config.Client
             }
             catch (Exception e)
             {
-                Logger?.LogError(e, "AgileConfig Client Websocket try connect to server occur error .");
+                Logger?.LogError(e, "client try connect to server occur error .");
             }
         }
 
@@ -320,7 +320,7 @@ namespace Agile.Config.Client
             {
                 ReloadDataDictFromContent(fileContent);
                 _isLoadFromLocal = true;
-                Logger?.LogTrace("AgileConfig Client load all configs from local file .");
+                Logger?.LogTrace("client load all configs from local file .");
             }
         }
 
@@ -367,7 +367,7 @@ namespace Agile.Config.Client
                    }
                    catch (Exception ex)
                    {
-                       Logger?.LogError(ex, "AgileConfig Client Websocket try to connected to server failed.");
+                       Logger?.LogError(ex, "client try to connected to server failed.");
                    }
                }
            });
@@ -407,11 +407,11 @@ namespace Agile.Config.Client
                        {
                             //这里由于多线程的问题，WebsocketClient有可能在上一个if判断成功后被置空或者断开，所以需要try一下避免线程退出
                             _WebsocketClient.Send("ping");
-                           Logger?.LogTrace("AgileConfig Client Say 'ping' by Websocket .");
+                           Logger?.LogTrace("client send 'ping' to server by websocket .");
                        }
                        catch (Exception ex)
                        {
-                           Logger?.LogError(ex, "AgileConfig Client Websocket try to send Heartbeat to server failed.");
+                           Logger?.LogError(ex, "client try to send Heartbeat to server failed.");
                        }
                    }
                }
@@ -424,7 +424,7 @@ namespace Agile.Config.Client
         /// </summary>
         private async Task ProcessMessage(string msg)
         {
-            Logger?.LogTrace("AgileConfig Client Receive message ' {0} ' by Websocket .", msg);
+            Logger?.LogTrace("client receive message ' {0} ' .", msg);
             if (string.IsNullOrEmpty(msg) || msg == "0")
             {
                 return;
@@ -473,7 +473,7 @@ namespace Agile.Config.Client
                             _adminSayOffline = true;
                             await _WebsocketClient.CloseAsync().ConfigureAwait(false);
                             this.Status = ConnectStatus.Disconnected;
-                            Logger?.LogTrace("Websocket client offline because admin console send a command 'offline' ,");
+                            Logger?.LogTrace("client offline because admin console send a command 'offline'");
                             NoticeChangedAsync(ActionConst.Offline);
                             break;
                         case ActionConst.Reload:
@@ -489,7 +489,7 @@ namespace Agile.Config.Client
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "Cannot handle websocket message {0}", msg);
+                Logger?.LogError(ex, "Cannot handle message {0}", msg);
             }
         }
 
@@ -547,13 +547,13 @@ namespace Agile.Config.Client
                             WriteConfigsToLocal(respContent);
                             _isLoadFromLocal = false;
 
-                            Logger?.LogTrace("AgileConfig Client Loaded all the configs success from {0} , Try count: {1}.", apiUrl, failCount);
+                            Logger?.LogTrace("Aclient load all the configs from {0} successful . try count: {1}.", apiUrl, failCount);
                             return true;
                         }
                         else
                         {
                             //load remote configs err .
-                            var ex = result.Exception ?? new Exception("AgileConfig Client Load all the configs failed .");
+                            var ex = result.Exception ?? new Exception("client try to load all the configs but failed .");
                             throw ex;
                         }
                     }
@@ -606,7 +606,7 @@ namespace Agile.Config.Client
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "AgileConfig Client try to cache all configs to local but fail .");
+                Logger?.LogError(ex, "client try to cache all configs to local but fail .");
             }
         }
 
