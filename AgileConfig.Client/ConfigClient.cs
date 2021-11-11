@@ -288,29 +288,19 @@ namespace AgileConfig.Client
                 var server = randomServer.Next();
                 try
                 {
-                    var websocketServerUrl = "";
-                    if (server.StartsWith("https:", StringComparison.CurrentCultureIgnoreCase))
+                    var wsUrl = GenerateWSUrl(server, clientName, tag);
+                    Logger?.LogTrace("client try connect to server {0}", wsUrl);
+                    await client.ConnectAsync(new Uri(wsUrl), CancellationToken.None).ConfigureAwait(false);
+                    if (client.State == WebSocketState.Open)
                     {
-                        websocketServerUrl = server.Replace("https:", "wss:").Replace("HTTPS:", "wss:");
+                        Logger?.LogTrace("client connect server {0} successful .", wsUrl);
                     }
-                    else
-                    {
-                        websocketServerUrl = server.Replace("http:", "ws:").Replace("HTTP:", "ws:");
-                    }
-                    websocketServerUrl = websocketServerUrl + (websocketServerUrl.EndsWith("/") ? "ws" : "/ws");
-                    websocketServerUrl += "?";
-                    websocketServerUrl += "client_name=" + clientName;
-                    websocketServerUrl += "&client_tag=" + tag;
-
-                    Logger?.LogTrace("AgileConfig Client Websocket try connect to server by url {0}", websocketServerUrl);
-                    await client.ConnectAsync(new Uri(websocketServerUrl), CancellationToken.None).ConfigureAwait(false);
-                    Logger?.LogTrace("AgileConfig Client Websocket Connected server  by url {0}", websocketServerUrl);
                     break;
                 }
                 catch (Exception e)
                 {
                     failCount++;
-                    Logger?.LogError(e, "AgileConfig Client Websocket try connect to server occur error .");
+                    Logger?.LogError(e, $"client try to connect server [{server}] occur error .");
                 }
             }
 
@@ -325,6 +315,32 @@ namespace AgileConfig.Client
             return true;
         }
 
+        /// <summary>
+        /// 构造websocket连接的url
+        /// </summary>
+        /// <param name="server"></param>
+        /// <param name="clientName"></param>
+        /// <param name="tag"></param>
+        /// <returns></returns>
+        private string GenerateWSUrl(string server, string clientName, string tag)
+        {
+            var url = "";
+            if (server.StartsWith("https:", StringComparison.CurrentCultureIgnoreCase))
+            {
+                url = server.Replace("https:", "wss:").Replace("HTTPS:", "wss:");
+            }
+            else
+            {
+                url = server.Replace("http:", "ws:").Replace("HTTP:", "ws:");
+            }
+            url = url + (url.EndsWith("/") ? "ws" : "/ws");
+            url += "?";
+            url += "client_name=" + clientName;
+            url += "&client_tag=" + tag;
+
+            return url;
+        }
+
         private void LoadConfigsFromLoacl()
         {
             var fileContent = ReadConfigsFromLocal();
@@ -332,7 +348,7 @@ namespace AgileConfig.Client
             {
                 ReloadDataDictFromContent(fileContent);
                 _isLoadFromLocal = true;
-                Logger?.LogTrace("AgileConfig Client load all configs from local file .");
+                Logger?.LogTrace("client load all configs from local file .");
             }
         }
 
@@ -380,7 +396,7 @@ namespace AgileConfig.Client
                     }
                     catch (Exception ex)
                     {
-                        Logger?.LogError(ex, "AgileConfig Client Websocket try to connected to server failed.");
+                        Logger?.LogError(ex, "client try to connect to server but failed.");
                     }
                 }
             }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
@@ -421,11 +437,11 @@ namespace AgileConfig.Client
                             //这里由于多线程的问题，WebsocketClient有可能在上一个if判断成功后被置空或者断开，所以需要try一下避免线程退出
                             await _WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
                                     CancellationToken.None).ConfigureAwait(false);
-                            Logger?.LogTrace("AgileConfig Client Say 'ping' by Websocket .");
+                            Logger?.LogTrace("client send 'ping' to server by websocket .");
                         }
                         catch (Exception ex)
                         {
-                            Logger?.LogError(ex, "AgileConfig Client Websocket try to send Heartbeat to server failed.");
+                            Logger?.LogError(ex, "client try to send Heartbeat to server but failed.");
                         }
                     }
                 }
@@ -449,12 +465,12 @@ namespace AgileConfig.Client
                     }
                     catch (Exception ex)
                     {
-                        Logger?.LogError(ex, "AgileConfig Client Websocket try to ReceiveAsync message occur exception .");
+                        Logger?.LogError(ex, "client try to receive message occur exception .");
                         throw;
                     }
                     if (result != null && result.CloseStatus.HasValue)
                     {
-                        Logger?.LogTrace("AgileConfig Client Websocket closed , {0} .", result.CloseStatusDescription);
+                        Logger?.LogTrace("client closed , {0} .", result.CloseStatusDescription);
                         break;
                     }
                     ProcessMessage(result, buffer);
@@ -476,7 +492,7 @@ namespace AgileConfig.Client
                     using (var reader = new StreamReader(ms, Encoding.UTF8))
                     {
                         var msg = await reader.ReadToEndAsync().ConfigureAwait(false);
-                        Logger?.LogTrace("AgileConfig Client Receive message ' {0} ' by Websocket .", msg);
+                        Logger?.LogTrace("client receive message ' {0} ' from server .", msg);
                         if (string.IsNullOrEmpty(msg) || msg == "0")
                         {
                             return;
@@ -505,27 +521,11 @@ namespace AgileConfig.Client
                                 }
                                 switch (action.Action)
                                 {
-                                    case ActionConst.Add:
-                                        dict.AddOrUpdate(itemKey, action.Item.value, (k, v) => { return action.Item.value; });
-                                        NoticeChangedAsync(ActionConst.Add, itemKey);
-                                        break;
-                                    case ActionConst.Update:
-                                        if (action.OldItem != null)
-                                        {
-                                            dict.TryRemove(GenerateKey(action.OldItem), out string oldV);
-                                        }
-                                        dict.AddOrUpdate(itemKey, action.Item.value, (k, v) => { return action.Item.value; });
-                                        NoticeChangedAsync(ActionConst.Update, itemKey);
-                                        break;
-                                    case ActionConst.Remove:
-                                        dict.TryRemove(itemKey, out string oldV1);
-                                        NoticeChangedAsync(ActionConst.Remove, itemKey);
-                                        break;
                                     case ActionConst.Offline:
                                         _adminSayOffline = true;
                                         await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
                                         this.Status = ConnectStatus.Disconnected;
-                                        Logger?.LogTrace("Websocket client offline because admin console send a command 'offline' ,");
+                                        Logger?.LogTrace("client offline because admin console send a command 'offline' ,");
                                         NoticeChangedAsync(ActionConst.Offline);
                                         break;
                                     case ActionConst.Reload:
@@ -541,7 +541,7 @@ namespace AgileConfig.Client
                         }
                         catch (Exception ex)
                         {
-                            Logger?.LogError(ex, "Cannot handle websocket message {0}", msg);
+                            Logger?.LogError(ex, "cannot handle websocket message {0}", msg);
                         }
                     }
                 }
@@ -602,13 +602,13 @@ namespace AgileConfig.Client
                             WriteConfigsToLocal(respContent);
                             _isLoadFromLocal = false;
 
-                            Logger?.LogTrace("AgileConfig Client Loaded all the configs success from {0} , Try count: {1}.", apiUrl, failCount);
+                            Logger?.LogTrace("client load all the configs success by API: {0} , try count: {1}.", apiUrl, failCount);
                             return true;
                         }
                         else
                         {
                             //load remote configs err .
-                            var ex = result.Exception ?? new Exception("AgileConfig Client Load all the configs failed .");
+                            var ex = result.Exception ?? new Exception("client try to load all the configs but failed .");
                             throw ex;
                         }
                     }
@@ -661,7 +661,7 @@ namespace AgileConfig.Client
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "AgileConfig Client try to cache all configs to local but fail .");
+                Logger?.LogError(ex, "client try to cache all configs to local but failed .");
             }
         }
 
