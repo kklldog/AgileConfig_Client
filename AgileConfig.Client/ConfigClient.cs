@@ -45,6 +45,7 @@ namespace AgileConfig.Client
             var name = localconfig["AgileConfig:name"];
             var tag = localconfig["AgileConfig:tag"];
             var env = localconfig["AgileConfig:env"];
+            var timeout = localconfig["AgileConfig:httpTimeout"];
 
             if (string.IsNullOrEmpty(appId))
             {
@@ -60,6 +61,13 @@ namespace AgileConfig.Client
             this._Secret = secret;
             this._ServerNodes = serverNodes;
             this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
+            if (!string.IsNullOrEmpty(timeout))
+            {
+                if (int.TryParse(timeout,out int iTimeout))
+                {
+                    this.HttpTimeout = iTimeout;
+                }
+            }
         }
 
         public ConfigClient(IConfiguration configuration, ILogger logger = null)
@@ -84,6 +92,7 @@ namespace AgileConfig.Client
             var name = children.FirstOrDefault(x => string.Equals(x.Key, "name", StringComparison.OrdinalIgnoreCase))?.Value;
             var tag = children.FirstOrDefault(x => string.Equals(x.Key, "tag", StringComparison.OrdinalIgnoreCase))?.Value;
             var env = children.FirstOrDefault(x => string.Equals(x.Key, "env", StringComparison.OrdinalIgnoreCase))?.Value;
+            var timeout = children.FirstOrDefault(x => string.Equals(x.Key, "httpTimeout", StringComparison.OrdinalIgnoreCase))?.Value;
 
             if (string.IsNullOrEmpty(appId))
             {
@@ -101,6 +110,13 @@ namespace AgileConfig.Client
             this._Secret = secret;
             this._ServerNodes = serverNodes;
             this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
+            if (!string.IsNullOrEmpty(timeout))
+            {
+                if (int.TryParse(timeout, out int iTimeout))
+                {
+                    this.HttpTimeout = iTimeout;
+                }
+            }
         }
 
         public ConfigClient(string appId, string secret, string serverNodes, string env, ILogger logger = null)
@@ -139,7 +155,8 @@ namespace AgileConfig.Client
         public ILogger Logger { get; set; }
         public ConnectStatus Status { get; private set; }
 
-        public string ServerNodes { 
+        public string ServerNodes
+        {
             get
             {
                 return _ServerNodes;
@@ -177,6 +194,15 @@ namespace AgileConfig.Client
             get;
             set;
         }
+
+        /// <summary>
+        /// http 超时时间 , 单位秒 , 默认100
+        /// </summary>
+        public int HttpTimeout
+        {
+            get;
+            set;
+        } = 100;
 
         /// <summary>
         /// 是否读取的事本地缓存的配置
@@ -581,23 +607,21 @@ namespace AgileConfig.Client
             var randomServer = new RandomServers(_ServerNodes);
             while (!randomServer.IsComplete)
             {
-                var url = randomServer.Next();
+                var server = randomServer.Next();
                 try
                 {
-                    var op = new AgileHttp.RequestOptions()
+                    var headers = new Dictionary<string, string>()
                     {
-                        Headers = new Dictionary<string, string>()
-                        {
-                            {"appid", _AppId },
-                            {"Authorization", GenerateBasicAuthorization(_AppId, _Secret) }
-                        }
+                       {"appid", _AppId },
+                       {"Authorization", GenerateBasicAuthorization(_AppId, _Secret) }
                     };
-                    var apiUrl = url + (url.EndsWith("/") ? "" : "/") + $"api/config/app/{_AppId}?env={_Env}";
-                    using (var result = AgileHttp.HTTP.Send(apiUrl, "GET", null, op))
+                    var apiUrl = server + (server.EndsWith("/") ? "" : "/") + $"api/config/app/{_AppId}?env={_Env}";
+                    var timeout = (HttpTimeout <= 0 ? 30 : HttpTimeout) * 1000;
+                    using (var result = HttpUtil.Get(apiUrl, headers, timeout))
                     {
                         if (result.StatusCode == System.Net.HttpStatusCode.OK)
                         {
-                            var respContent = result.GetResponseContent();
+                            var respContent = HttpUtil.GetResponseContent(result);
                             ReloadDataDictFromContent(respContent);
                             WriteConfigsToLocal(respContent);
                             _isLoadFromLocal = false;
@@ -608,13 +632,13 @@ namespace AgileConfig.Client
                         else
                         {
                             //load remote configs err .
-                            var ex = result.Exception ?? new Exception("client try to load all the configs but failed .");
-                            throw ex;
+                            throw new Exception($"client try to load all the configs but failed , url {apiUrl}.");
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logger?.LogError(ex, "client try to load all the configs but failed .");
                     failCount++;
                 }
             }

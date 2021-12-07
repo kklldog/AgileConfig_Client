@@ -16,7 +16,7 @@ namespace OnFrameworkTest
             var appid = "test_app";
             var secret = "test_app";
             var nodes = "http://agileconfig_server.xbaby.xyz";
-            var client = new ConfigClient(appid, secret, nodes);
+            var client = new ConfigClient(appid, secret, nodes, "DEV");
 
             client.ConnectAsync().GetAwaiter().GetResult();
 

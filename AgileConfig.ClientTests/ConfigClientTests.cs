@@ -14,7 +14,7 @@ namespace Agile.Config.Client.Tests
         [TestMethod()]
         public void LoadConfigsTest()
         {
-            var client = new ConfigClient("1","2","http://");
+            var client = new ConfigClient("1","2","http://", "DEV");
 
             client.LoadConfigs(null);
 
