@@ -23,6 +23,21 @@ namespace AgileConfig.Client
 
     public class ConfigClient : IConfigClient
     {
+        private int _WebsocketReconnectInterval = 5;
+        private int _WebsocketHeartbeatInterval = 30;
+        private string _ServerNodes;
+        private string _AppId;
+        private string _Secret;
+        private bool _isAutoReConnecting = false;
+        private bool _isWsHeartbeating = false;
+        private string _Env;
+        private string _CacheDire;
+        private ClientWebSocket _WebsocketClient;
+        private bool _adminSayOffline = false;
+        private bool _isLoadFromLocal = false;
+        private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private List<ConfigItem> _configs = new List<ConfigItem>();
+        private string LocalCacheFileName => Path.Combine(_CacheDire, $"{_AppId}.agileconfig.client.configs.cache");
         public static IConfigClient Instance = null;
         public ConfigClient(string json = "appsettings.json")
         {
@@ -61,12 +76,18 @@ namespace AgileConfig.Client
             this._Secret = secret;
             this._ServerNodes = serverNodes;
             this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
-            if (!string.IsNullOrEmpty(timeout))
+            _CacheDire = localconfig["AgileConfig:cache:directory"];
+            if (!string.IsNullOrWhiteSpace(_CacheDire) && !Directory.Exists(_CacheDire))
             {
-                if (int.TryParse(timeout,out int iTimeout))
-                {
-                    this.HttpTimeout = iTimeout;
-                }
+                Directory.CreateDirectory(_CacheDire);
+            }
+            if (string.IsNullOrEmpty(timeout))
+            {
+                return;
+            }
+            if (int.TryParse(timeout, out int iTimeout))
+            {
+                this.HttpTimeout = iTimeout;
             }
         }
 
@@ -110,12 +131,18 @@ namespace AgileConfig.Client
             this._Secret = secret;
             this._ServerNodes = serverNodes;
             this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
-            if (!string.IsNullOrEmpty(timeout))
+            _CacheDire = children.FirstOrDefault(x => string.Equals(x.Key, "AgileConfig:cache:directory", StringComparison.OrdinalIgnoreCase))?.Value;
+            if (!string.IsNullOrWhiteSpace(_CacheDire) && !Directory.Exists(_CacheDire))
             {
-                if (int.TryParse(timeout, out int iTimeout))
-                {
-                    this.HttpTimeout = iTimeout;
-                }
+                Directory.CreateDirectory(_CacheDire);
+            }
+            if (string.IsNullOrEmpty(timeout))
+            {
+                return;
+            }
+            if (int.TryParse(timeout, out int iTimeout))
+            {
+                this.HttpTimeout = iTimeout;
             }
         }
 
@@ -135,22 +162,6 @@ namespace AgileConfig.Client
             this._ServerNodes = serverNodes;
             this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
         }
-
-        private int _WebsocketReconnectInterval = 5;
-        private int _WebsocketHeartbeatInterval = 30;
-
-        private string _ServerNodes;
-        private string _AppId;
-        private string _Secret;
-        private bool _isAutoReConnecting = false;
-        private bool _isWsHeartbeating = false;
-        private string _Env;
-
-        private ClientWebSocket _WebsocketClient;
-        private bool _adminSayOffline = false;
-        private bool _isLoadFromLocal = false;
-        private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        private List<ConfigItem> _configs = new List<ConfigItem>();
 
         public ILogger Logger { get; set; }
         public ConnectStatus Status { get; private set; }
@@ -671,7 +682,7 @@ namespace AgileConfig.Client
             LoadConfigs(configs);
         }
 
-        private string LocalCacheFileName => $"{_AppId}.agileconfig.client.configs.cache";
+
         private void WriteConfigsToLocal(string configContent)
         {
             try
