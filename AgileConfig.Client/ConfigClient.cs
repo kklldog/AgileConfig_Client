@@ -39,130 +39,6 @@ namespace AgileConfig.Client
         private List<ConfigItem> _configs = new List<ConfigItem>();
         private string LocalCacheFileName => Path.Combine(_CacheDire, $"{_AppId}.agileconfig.client.configs.cache");
         public static IConfigClient Instance = null;
-        public ConfigClient(string json = "appsettings.json")
-        {
-            if (string.IsNullOrWhiteSpace(json))
-                throw new ArgumentNullException(nameof(json));
-
-            //读取本地配置
-            var localconfig = new ConfigurationBuilder()
-                             .SetBasePath(Directory.GetCurrentDirectory())
-                             .AddJsonFile(json).AddEnvironmentVariables().Build();
-            //从本地配置里读取AgileConfig的相关信息
-            var configSection = localconfig.GetSection("AgileConfig");
-            if (!configSection.Exists())
-            {
-                throw new Exception($"Can not find section:AgileConfig from {json}");
-            }
-            var appId = localconfig["AgileConfig:appId"];
-            var secret = localconfig["AgileConfig:secret"];
-            var serverNodes = localconfig["AgileConfig:nodes"];
-            var name = localconfig["AgileConfig:name"];
-            var tag = localconfig["AgileConfig:tag"];
-            var env = localconfig["AgileConfig:env"];
-            var timeout = localconfig["AgileConfig:httpTimeout"];
-
-            if (string.IsNullOrEmpty(appId))
-            {
-                throw new ArgumentNullException(nameof(appId));
-            }
-            if (string.IsNullOrEmpty(serverNodes))
-            {
-                throw new ArgumentNullException(nameof(serverNodes));
-            }
-            this.Name = name;
-            this.Tag = tag;
-            this._AppId = appId;
-            this._Secret = secret;
-            this._ServerNodes = serverNodes;
-            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
-            _CacheDire = localconfig["AgileConfig:cache:directory"];
-            if (!string.IsNullOrWhiteSpace(_CacheDire) && !Directory.Exists(_CacheDire))
-            {
-                Directory.CreateDirectory(_CacheDire);
-            }
-            if (string.IsNullOrEmpty(timeout))
-            {
-                return;
-            }
-            if (int.TryParse(timeout, out int iTimeout))
-            {
-                this.HttpTimeout = iTimeout;
-            }
-        }
-
-        public ConfigClient(IConfiguration configuration, ILogger logger = null)
-        {
-            this.Logger = logger;
-
-            var children = configuration.GetSection("AgileConfig").GetChildren();
-
-            if (children == null || !children.Any())
-            {
-                children = configuration.GetChildren();
-            }
-
-            if (children == null || !children.Any())
-            {
-                throw new ArgumentNullException(nameof(configuration));
-            }
-
-            var appId = children.FirstOrDefault(x => string.Equals(x.Key, "appid", StringComparison.OrdinalIgnoreCase))?.Value;
-            var secret = children.FirstOrDefault(x => string.Equals(x.Key, "secret", StringComparison.OrdinalIgnoreCase))?.Value;
-            var serverNodes = children.FirstOrDefault(x => string.Equals(x.Key, "nodes", StringComparison.OrdinalIgnoreCase))?.Value;
-            var name = children.FirstOrDefault(x => string.Equals(x.Key, "name", StringComparison.OrdinalIgnoreCase))?.Value;
-            var tag = children.FirstOrDefault(x => string.Equals(x.Key, "tag", StringComparison.OrdinalIgnoreCase))?.Value;
-            var env = children.FirstOrDefault(x => string.Equals(x.Key, "env", StringComparison.OrdinalIgnoreCase))?.Value;
-            var timeout = children.FirstOrDefault(x => string.Equals(x.Key, "httpTimeout", StringComparison.OrdinalIgnoreCase))?.Value;
-
-            if (string.IsNullOrEmpty(appId))
-            {
-                throw new ArgumentNullException(nameof(appId));
-            }
-
-            if (string.IsNullOrEmpty(serverNodes))
-            {
-                throw new ArgumentNullException(nameof(serverNodes));
-            }
-
-            this.Name = name;
-            this.Tag = tag;
-            this._AppId = appId;
-            this._Secret = secret;
-            this._ServerNodes = serverNodes;
-            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
-            _CacheDire = children.FirstOrDefault(x => string.Equals(x.Key, "AgileConfig:cache:directory", StringComparison.OrdinalIgnoreCase))?.Value;
-            if (!string.IsNullOrWhiteSpace(_CacheDire) && !Directory.Exists(_CacheDire))
-            {
-                Directory.CreateDirectory(_CacheDire);
-            }
-            if (string.IsNullOrEmpty(timeout))
-            {
-                return;
-            }
-            if (int.TryParse(timeout, out int iTimeout))
-            {
-                this.HttpTimeout = iTimeout;
-            }
-        }
-
-        public ConfigClient(string appId, string secret, string serverNodes, string env, ILogger logger = null)
-        {
-            this.Logger = logger;
-            if (string.IsNullOrEmpty(appId))
-            {
-                throw new ArgumentNullException(nameof(appId));
-            }
-            if (string.IsNullOrEmpty(serverNodes))
-            {
-                throw new ArgumentNullException(nameof(serverNodes));
-            }
-            this._AppId = appId;
-            this._Secret = secret;
-            this._ServerNodes = serverNodes;
-            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
-        }
-
         public ILogger Logger { get; set; }
         public ConnectStatus Status { get; private set; }
 
@@ -252,6 +128,129 @@ namespace AgileConfig.Client
         {
             Data.TryGetValue(key, out string val);
             return val;
+        }
+        public ConfigClient(string json = "appsettings.json")
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                throw new ArgumentNullException(nameof(json));
+
+            //读取本地配置
+            var localconfig = new ConfigurationBuilder()
+                             .SetBasePath(Directory.GetCurrentDirectory())
+                             .AddJsonFile(json).AddEnvironmentVariables().Build();
+            //从本地配置里读取AgileConfig的相关信息
+            var configSection = localconfig.GetSection("AgileConfig");
+            if (!configSection.Exists())
+            {
+                throw new Exception($"Can not find section:AgileConfig from {json}");
+            }
+            var appId = localconfig["AgileConfig:appId"];
+            var secret = localconfig["AgileConfig:secret"];
+            var serverNodes = localconfig["AgileConfig:nodes"];
+            var name = localconfig["AgileConfig:name"];
+            var tag = localconfig["AgileConfig:tag"];
+            var env = localconfig["AgileConfig:env"];
+            var timeout = localconfig["AgileConfig:httpTimeout"];
+
+            if (string.IsNullOrEmpty(appId))
+            {
+                throw new ArgumentNullException(nameof(appId));
+            }
+            if (string.IsNullOrEmpty(serverNodes))
+            {
+                throw new ArgumentNullException(nameof(serverNodes));
+            }
+            this.Name = name;
+            this.Tag = tag;
+            this._AppId = appId;
+            this._Secret = secret;
+            this._ServerNodes = serverNodes;
+            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
+            _CacheDire = localconfig["AgileConfig:cache:directory"] ?? "";
+            if (!string.IsNullOrWhiteSpace(_CacheDire) && !Directory.Exists(_CacheDire))
+            {
+                Directory.CreateDirectory(_CacheDire);
+            }
+            if (string.IsNullOrEmpty(timeout))
+            {
+                return;
+            }
+            if (int.TryParse(timeout, out int iTimeout))
+            {
+                this.HttpTimeout = iTimeout;
+            }
+        }
+
+        public ConfigClient(IConfiguration configuration, ILogger logger = null)
+        {
+            this.Logger = logger;
+
+            var children = configuration.GetSection("AgileConfig").GetChildren();
+
+            if (children == null || !children.Any())
+            {
+                children = configuration.GetChildren();
+            }
+
+            if (children == null || !children.Any())
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
+            var appId = children.FirstOrDefault(x => string.Equals(x.Key, "appid", StringComparison.OrdinalIgnoreCase))?.Value;
+            var secret = children.FirstOrDefault(x => string.Equals(x.Key, "secret", StringComparison.OrdinalIgnoreCase))?.Value;
+            var serverNodes = children.FirstOrDefault(x => string.Equals(x.Key, "nodes", StringComparison.OrdinalIgnoreCase))?.Value;
+            var name = children.FirstOrDefault(x => string.Equals(x.Key, "name", StringComparison.OrdinalIgnoreCase))?.Value;
+            var tag = children.FirstOrDefault(x => string.Equals(x.Key, "tag", StringComparison.OrdinalIgnoreCase))?.Value;
+            var env = children.FirstOrDefault(x => string.Equals(x.Key, "env", StringComparison.OrdinalIgnoreCase))?.Value;
+            var timeout = children.FirstOrDefault(x => string.Equals(x.Key, "httpTimeout", StringComparison.OrdinalIgnoreCase))?.Value;
+
+            if (string.IsNullOrEmpty(appId))
+            {
+                throw new ArgumentNullException(nameof(appId));
+            }
+
+            if (string.IsNullOrEmpty(serverNodes))
+            {
+                throw new ArgumentNullException(nameof(serverNodes));
+            }
+
+            this.Name = name;
+            this.Tag = tag;
+            this._AppId = appId;
+            this._Secret = secret;
+            this._ServerNodes = serverNodes;
+            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
+            _CacheDire = children.FirstOrDefault(x => string.Equals(x.Key, "AgileConfig:cache:directory", StringComparison.OrdinalIgnoreCase))?.Value ?? "";
+            if (!string.IsNullOrWhiteSpace(_CacheDire) && !Directory.Exists(_CacheDire))
+            {
+                Directory.CreateDirectory(_CacheDire);
+            }
+            if (string.IsNullOrEmpty(timeout))
+            {
+                return;
+            }
+            if (int.TryParse(timeout, out int iTimeout))
+            {
+                this.HttpTimeout = iTimeout;
+            }
+        }
+
+        public ConfigClient(string appId, string secret, string serverNodes, string env, ILogger logger = null)
+        {
+            this.Logger = logger;
+            if (string.IsNullOrEmpty(appId))
+            {
+                throw new ArgumentNullException(nameof(appId));
+            }
+            if (string.IsNullOrEmpty(serverNodes))
+            {
+                throw new ArgumentNullException(nameof(serverNodes));
+            }
+            this._AppId = appId;
+            this._Secret = secret;
+            this._ServerNodes = serverNodes;
+            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
         }
 
         /// <summary>
