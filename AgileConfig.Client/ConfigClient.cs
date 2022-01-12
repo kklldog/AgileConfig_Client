@@ -37,7 +37,7 @@ namespace AgileConfig.Client
         private bool _isLoadFromLocal = false;
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
-        private string LocalCacheFileName => $"{_AppId}.agileconfig.client.configs.cache";
+        private string LocalCacheFileName => Path.Combine(_CacheDire, $"{_AppId}.agileconfig.client.configs.cache");
         public static IConfigClient Instance = null;
         public ConfigClient(string json = "appsettings.json")
         {
@@ -162,7 +162,7 @@ namespace AgileConfig.Client
             this._ServerNodes = serverNodes;
             this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
         }
-    
+
         public ILogger Logger { get; set; }
         public ConnectStatus Status { get; private set; }
 
@@ -682,7 +682,7 @@ namespace AgileConfig.Client
             LoadConfigs(configs);
         }
 
-     
+
         private void WriteConfigsToLocal(string configContent)
         {
             try
