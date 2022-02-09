@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AgileConfig.Protocol;
+using Microsoft.Extensions.Logging;
 
 namespace AgileConfig.Client
 {
@@ -38,5 +39,9 @@ namespace AgileConfig.Client
         void LoadConfigs(List<ConfigItem> configs);
 
         event Action<ConfigChangedArg> ConfigChanged;
+
+        ILogger Logger { get; }
+
+        void ConfigLogger(Func<ILogger> func);
     }
 }

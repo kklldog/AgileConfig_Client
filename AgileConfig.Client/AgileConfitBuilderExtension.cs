@@ -1,6 +1,7 @@
 ﻿using AgileConfig.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 
 namespace Microsoft.AspNetCore.Hosting
@@ -11,9 +12,27 @@ namespace Microsoft.AspNetCore.Hosting
             this IConfigurationBuilder builder,
             IConfigClient client, Action<ConfigChangedArg> e = null)
         {
-            if (e != null)
-                client.ConfigChanged += e;
             ConfigClient.Instance = client;
+
+            if (e != null)
+            {
+                client.ConfigChanged += e;
+            }
+
+            if (client.Logger  == null)
+            {
+                using (var loggerFactory = LoggerFactory.Create(lb =>
+                {
+                    lb.SetMinimumLevel(LogLevel.Trace);
+                    lb.AddConsole();
+                }))
+                {
+                    var logger = loggerFactory.CreateLogger<ConfigClient>();
+                    client.Logger = logger;
+                    client.Logger.LogInformation("agileConfig client set a default console logger .");
+                }
+            }
+
             return builder.Add(new AgileConfigSource(client));
         }
 

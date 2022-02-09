@@ -697,6 +697,10 @@ namespace AgileConfig.Client
             }
         }
 
-
+        private Func<ILogger> _configLoggerFunc = null;
+        public void ConfigLogger(Func<ILogger> func)
+        {
+            _configLoggerFunc = func;
+        }
     }
 }
