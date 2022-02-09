@@ -50,7 +50,8 @@ Install-Package AgileConfig.Client
 |cache|客户端的配置缓存设置|否|通过此配置可对拉取到本地的配置项文件进行相关设置|
 |cache:directory|客户端的配置缓存文件存储地址配置|否|如设置了此目录则将拉取到的配置项cache文件存储到该目录，否则直接存储到站点根目录|
 
-## 使用UseAgileConfig
+## UseAgileConfig
+在 program 类上使用 UseAgileConfig 扩展方法，该方法会配置一个 AgileConfig 的配置源。
 ```
  public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
