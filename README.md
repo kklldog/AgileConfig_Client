@@ -29,11 +29,28 @@ Install-Package AgileConfig.Client
     "nodes": "http://localhost:5000,http://localhost:5001"//多个节点使用逗号分隔,
     "name": "client1",
     "tag": "tag1",
-    "env": "DEV"
+    "env": "DEV",
+    "cache": {
+      "directory": "agile/config"
+    }
   }
 }
 
 ```
+#### 配置项说明
+
+|配置项名称|配置项说明|是否必填|备注|
+|--|--|--|--|
+|appid|应用ID|是|对应后台管理中应用的`应用ID`|
+|secret|应用密钥|是|对应后台管理中应用的`密钥`|
+|nodes|应用配置节点|是|存在多个节点则使用逗号`,`分隔|
+|name|连接客户端的自定义名称|否|方便在agile配置中心后台对当前客户端进行查阅与管理|
+|tag|连接客户端自定义标签|否|方便在agile配置中心后台对当前客户端进行查阅与管理|
+|env|配置中心的环境|否|通过此配置决定拉取哪个环境的配置信息；如果不配置，服务端会默认返回第一个环境的配置|
+|cache|客户端的配置缓存设置|否|通过此配置可对拉取到本地的配置项文件进行相关设置|
+|cache:directory|客户端的配置缓存文件存储地址配置|否|如设置了此目录则将拉取到的配置项cache文件存储到该目录，否则直接存储到站点根目录|
+
+
 在program的ConfigureAppConfiguration方法内使用AddAgileConfig添加一个配置源。
 ```
        public static IHostBuilder CreateHostBuilder(string[] args) =>
