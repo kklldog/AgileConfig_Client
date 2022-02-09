@@ -1,5 +1,6 @@
 ﻿using AgileConfig.Client;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -33,6 +34,10 @@ namespace Microsoft.AspNetCore.Hosting
             builder.ConfigureAppConfiguration((_, cfb) =>
             {
                 cfb.AddAgileConfig(e);
+            })
+            .ConfigureServices((ctx, services) =>
+            {
+                services.AddAgileConfig();
             });
 
             return builder;
@@ -42,6 +47,10 @@ namespace Microsoft.AspNetCore.Hosting
             builder.ConfigureAppConfiguration((_, cfb) =>
             {
                 cfb.AddAgileConfig(client, e);
+            })
+            .ConfigureServices((ctx, services) =>
+            {
+                services.AddAgileConfig();
             });
 
             return builder;

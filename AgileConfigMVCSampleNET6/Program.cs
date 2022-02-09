@@ -4,10 +4,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((ctx, lc) => lc
     .WriteTo.Console()
     );
-builder.Host.ConfigureAppConfiguration((_, bd) => {
-    bd.AddAgileConfig(e => {
-    });
-});
+//use agileconfig client
+builder.Host.UseAgileConfig();
 
 // Add services to the container.
 builder.Services.AddRazorPages();
