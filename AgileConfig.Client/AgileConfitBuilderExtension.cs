@@ -19,20 +19,6 @@ namespace Microsoft.AspNetCore.Hosting
                 client.ConfigChanged += e;
             }
 
-            if (client.Logger  == null)
-            {
-                using (var loggerFactory = LoggerFactory.Create(lb =>
-                {
-                    lb.SetMinimumLevel(LogLevel.Trace);
-                    lb.AddConsole();
-                }))
-                {
-                    var logger = loggerFactory.CreateLogger<ConfigClient>();
-                    client.Logger = logger;
-                    client.Logger.LogInformation("agileConfig client set a default console logger .");
-                }
-            }
-
             return builder.Add(new AgileConfigSource(client));
         }
 
