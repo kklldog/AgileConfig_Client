@@ -50,24 +50,7 @@ Install-Package AgileConfig.Client
 |cache|客户端的配置缓存设置|否|通过此配置可对拉取到本地的配置项文件进行相关设置|
 |cache:directory|客户端的配置缓存文件存储地址配置|否|如设置了此目录则将拉取到的配置项cache文件存储到该目录，否则直接存储到站点根目录|
 
-
-在program的ConfigureAppConfiguration方法内使用AddAgileConfig添加一个配置源。
-```
-       public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-            .ConfigureAppConfiguration((context, config) =>
-            {
-                config.AddAgileConfig((arg) =>
-                {
-                    Console.WriteLine($"action:{arg.Action} key:{arg.Key}");
-                });
-            })
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
-```
-或者使用UseAgileConfig扩展方法。
+## 使用UseAgileConfig
 ```
  public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
@@ -77,20 +60,6 @@ Install-Package AgileConfig.Client
                     webBuilder.UseStartup<Startup>();
                 });
 ```
-如果需要使用ConfigClient的实例来直接读取配置，可以在startup类的ConfigureServices方法内配置AddAgileConfig，以便使用IConfigClient接口直接注入ConfigClient的实例。
-```
-     public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddAgileConfig();
-
-            services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "AgileConfigMVCSampleNET5", Version = "v1" });
-            });
-        }
-```
-
 ## 读取配置
 AgileConfig支持asp.net core 标准的IConfiguration，跟IOptions模式读取配置。还支持直接通过AgileConfigClient实例直接读取：
 ```
