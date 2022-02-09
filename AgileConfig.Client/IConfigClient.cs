@@ -40,8 +40,7 @@ namespace AgileConfig.Client
 
         event Action<ConfigChangedArg> ConfigChanged;
 
-        ILogger Logger { get; }
+        ILogger Logger { get; set; }
 
-        void ConfigLogger(Func<ILogger> func);
     }
 }

@@ -37,9 +37,48 @@ namespace AgileConfig.Client
         private bool _isLoadFromLocal = false;
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
+        private ILogger _logger;
+        private ILogger _consoleLogger;
         private string LocalCacheFileName => Path.Combine(_CacheDire, $"{_AppId}.agileconfig.client.configs.cache");
         public static IConfigClient Instance = null;
-        public ILogger Logger { get; set; }
+
+        private ILogger ConsoleLogger
+        {
+            get
+            {
+                if (_consoleLogger != null)
+                {
+                    return _consoleLogger;
+                }
+
+                using (var loggerFactory = LoggerFactory.Create(lb =>
+                {
+                    lb.SetMinimumLevel(LogLevel.Trace);
+                    lb.AddConsole();
+                }))
+                {
+                    var logger = loggerFactory.CreateLogger<ConfigClient>();
+                    _consoleLogger = logger;
+                    return _consoleLogger;
+                }
+            }
+        }
+        public ILogger Logger { 
+            get 
+            {
+                if (_logger == null)
+                {
+                    // 给一个默认的 console logger
+                    return ConsoleLogger;
+                }
+
+                return _logger;
+            }
+            set
+            {
+                this._logger = value;
+            }
+        }
         public ConnectStatus Status { get; private set; }
 
         public string ServerNodes
@@ -729,12 +768,6 @@ namespace AgileConfig.Client
 
                 return sb.ToString();
             }
-        }
-
-        private Func<ILogger> _configLoggerFunc = null;
-        public void ConfigLogger(Func<ILogger> func)
-        {
-            _configLoggerFunc = func;
         }
     }
 }
