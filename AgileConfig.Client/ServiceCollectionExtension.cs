@@ -1,4 +1,5 @@
 ﻿using AgileConfig.Client;
+using AgileConfig.Client.RegisterCenter;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -13,6 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 ConfigClient.Instance.Logger = GetLogger(services);
                 return ConfigClient.Instance;
             });
+            services.AddHostedService<RegiserHostedService>();
         }
 
         private static ILogger GetLogger(IServiceCollection services)

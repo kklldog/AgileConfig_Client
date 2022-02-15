@@ -13,8 +13,8 @@ namespace AgileConfigConsoleSample
             //控制台、类库项目，不一定有appsettngs.json文件，所以使用ConfigClient的有参构造函数手动传入appid等参数
             //如果控制台项目同样建立了appsettings.json文件，那么同样可以跟mvc项目一样使用无参构造函数让Client自动读取appid等配置
             var appId = "test_app";
-            var secret = "";
-            var nodes = "http://agileconfig.xbaby.xyz:5000";
+            var secret = "test_app";
+            var nodes = "http://agileconfig_server.xbaby.xyz/";
             //使用有参构造函数，手动传入appid等信息
             var client = new ConfigClient(appId, secret, nodes, "DEV");
             Task.Run(async () =>

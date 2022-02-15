@@ -42,5 +42,7 @@ namespace AgileConfig.Client
 
         ILogger Logger { get; set; }
 
+        ConfigClientOptions Options { get; }
+
     }
 }

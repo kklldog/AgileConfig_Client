@@ -19,8 +19,8 @@ namespace AgileConfigWPFSample
         {
             //跟控制台项目一样，appid等信息取决于你如何获取。你可以写死，可以从配置文件读取，可以从别的web service读取。
             var appId = "test_app";
-            var secret = "";
-            var nodes = "http://agileconfig.xbaby.xyz:5000";
+            var secret = "test_app";
+            var nodes = "http://agileconfig_server.xbaby.xyz/";
             ConfigClient = new ConfigClient(appId, secret, nodes, "DEV");
             ConfigClient.Name = "wpfconfigclient";
             ConfigClient.Tag = "t1";

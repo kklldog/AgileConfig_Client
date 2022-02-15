@@ -17,7 +17,11 @@ namespace AgileConfigMVCSampleNET5
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .UseAgileConfig(e => Console.WriteLine($"configs {e.Action}"))
+                .UseAgileConfig((ConfigClientOptions op) =>
+                {
+                    op.Name = "xxx";
+                    op.Tag = "NET5";
+                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
