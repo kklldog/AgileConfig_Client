@@ -7,27 +7,30 @@ namespace AgileConfig.Client.RegisterCenter
 {
     public class RegiserHostedService : IHostedService
     {
-        private ILogger _logger;
-        public RegiserHostedService(ILogger<RegiserHostedService> logger)
+        private IRegisterService _registerService;
+        private ILoggerFactory _loggerFactory;
+        public RegiserHostedService(ILoggerFactory loggerFactory)
         {
-            _logger = logger;
+            _loggerFactory = loggerFactory;
+            _registerService = new RegisterService(ConfigClient.Instance.Options, _loggerFactory.CreateLogger<RegisterService>());
         }
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("RegiserHostedService starting ...");
-            _logger.LogInformation("try to register serviceinfo to server .");
+            var logger = _loggerFactory.CreateLogger<RegiserHostedService>();
+            logger.LogInformation("RegiserHostedService starting ...");
+            logger.LogInformation("try to register serviceinfo to server .");
 
-            RegisterService.Do();
-
-            return Task.CompletedTask;
+            await _registerService.RegisterAsync();
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("RegiserHostedService stoping ...");
-            _logger.LogInformation("try to unregister serviceinfo to server .");
+            var logger = _loggerFactory.CreateLogger<RegiserHostedService>();
 
-            return Task.CompletedTask;
+            logger.LogInformation("RegiserHostedService stoping ...");
+            logger.LogInformation("try to unregister serviceinfo to server .");
+
+            await _registerService.UnRegisterAsync();
         }
     }
 }

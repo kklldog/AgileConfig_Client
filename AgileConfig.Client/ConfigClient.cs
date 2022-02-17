@@ -216,7 +216,7 @@ namespace AgileConfig.Client
 
             options.ENV = string.IsNullOrEmpty(options.ENV) ? "" : options.ENV.ToUpper();
             options.CacheDirectory = options.CacheDirectory ?? "";
-            
+
             this._options = options;
         }
 
@@ -331,7 +331,7 @@ namespace AgileConfig.Client
             }
 
             var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
-            Load();//不管websocket是否成功，都去拉一次配置
+            await Load();//不管websocket是否成功，都去拉一次配置
             if (connected)
             {
                 HandleWebsocketMessageAsync();
@@ -461,7 +461,7 @@ namespace AgileConfig.Client
                         var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
                         if (connected)
                         {
-                            Load();
+                            await Load();
                             HandleWebsocketMessageAsync();
                             WebsocketHeartbeatAsync();
                         }
@@ -576,7 +576,7 @@ namespace AgileConfig.Client
                             if (version != localVersion)
                             {
                                 //如果数据库版本跟本地版本不一致则直接全部更新
-                                Load();
+                                await Load();
                             }
                             return;
                         }
@@ -601,7 +601,7 @@ namespace AgileConfig.Client
                                         NoticeChangedAsync(ActionConst.Offline);
                                         break;
                                     case ActionConst.Reload:
-                                        if (Load())
+                                        if (await Load())
                                         {
                                             NoticeChangedAsync(ActionConst.Reload);
                                         };
@@ -647,7 +647,7 @@ namespace AgileConfig.Client
         /// <summary>
         /// 通过http从server拉取所有配置到本地
         /// </summary>
-        public bool Load()
+        public async Task<bool> Load()
         {
             int failCount = 0;
             var randomServer = new RandomServers(ServerNodes);
@@ -667,7 +667,7 @@ namespace AgileConfig.Client
                     {
                         if (result.StatusCode == System.Net.HttpStatusCode.OK)
                         {
-                            var respContent = HttpUtil.GetResponseContent(result);
+                            var respContent = await HttpUtil.GetResponseContentAsync(result);
                             ReloadDataDictFromContent(respContent);
                             WriteConfigsToLocal(respContent);
                             _isLoadFromLocal = false;

@@ -102,6 +102,22 @@ namespace AgileConfig.Client
                 options.HttpTimeout = iTimeout;
             }
 
+            //read service info
+            options.RegisterInfo = new ServiceRegisterInfo();
+
+            var serviceId = config["AgileConfig:serviceRegister:serviceId"];
+            var serviceName = config["AgileConfig:serviceRegister:serviceName"];
+            var ip = config["AgileConfig:serviceRegister:ip"];
+            var port = config["AgileConfig:serviceRegister:port"];
+
+            options.RegisterInfo.ServiceId = serviceId;
+            options.RegisterInfo.ServiceName = serviceName;
+            options.RegisterInfo.Ip = ip;
+            if (int.TryParse(port,out int iport))
+            {
+                options.RegisterInfo.Port = iport;
+            }
+
             return options;
         }
     }
