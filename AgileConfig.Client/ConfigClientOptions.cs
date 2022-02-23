@@ -103,16 +103,33 @@ namespace AgileConfig.Client
             }
 
             //read service info
-            options.RegisterInfo = new ServiceRegisterInfo();
+            var serviceRegisterConf = config.GetSection("AgileConfig:serviceRegister");
+            if (serviceRegisterConf.Exists())
+            {
+                options.RegisterInfo = new ServiceRegisterInfo();
+            }
+            else
+            {
+                return options;
+            }
 
             var serviceId = config["AgileConfig:serviceRegister:serviceId"];
+            if (string.IsNullOrWhiteSpace(serviceId))
+            {
+                throw new ArgumentNullException("serviceRegister:serviceId");
+            }
             var serviceName = config["AgileConfig:serviceRegister:serviceName"];
+            if (string.IsNullOrWhiteSpace(serviceName))
+            {
+                throw new ArgumentNullException("serviceRegister:serviceName");
+            }
             var ip = config["AgileConfig:serviceRegister:ip"];
             var port = config["AgileConfig:serviceRegister:port"];
             var checkUrl = config["AgileConfig:serviceRegister:check:url"];
             var mode = config["AgileConfig:serviceRegister:check:mode"];
             var metaData = new List<string>();
             config.GetSection("AgileConfig:serviceRegister:metaData").Bind(metaData);
+
             options.RegisterInfo.ServiceId = serviceId;
             options.RegisterInfo.ServiceName = serviceName;
             options.RegisterInfo.Ip = ip;
@@ -123,7 +140,6 @@ namespace AgileConfig.Client
             }
             options.RegisterInfo.HeartBeatMode = mode;
             options.RegisterInfo.MetaData = metaData;
-
             if (int.TryParse(port,out int iport))
             {
                 options.RegisterInfo.Port = iport;

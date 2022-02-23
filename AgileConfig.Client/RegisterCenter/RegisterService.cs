@@ -71,7 +71,7 @@ namespace AgileConfig.Client.RegisterCenter
                 var postUrl = host + (host.EndsWith("/") ? "" : "/") + $"api/registercenter/{_uniqueId}";
                 try
                 {
-                    var resp = await HttpUtil.DeleteAsync(postUrl, null, data, _options.HttpTimeout, "application/json");
+                    var resp = await HttpUtil.DeleteAsync(postUrl, null, data, null, "application/json");
                     var content = await HttpUtil.GetResponseContentAsync(resp);
                     _logger.LogInformation($"UNREGISTER service info from server:{host} then server response result:{content} status:{resp.StatusCode}");
 
@@ -117,7 +117,7 @@ namespace AgileConfig.Client.RegisterCenter
                             var postUrl = host + (host.EndsWith("/") ? "" : "/") + $"api/registercenter";
                             try
                             {
-                                var resp = await HttpUtil.PostAsync(postUrl, null, data, _options.HttpTimeout, "application/json");
+                                var resp = await HttpUtil.PostAsync(postUrl, null, data, null, "application/json");
                                 var content = await HttpUtil.GetResponseContentAsync(resp);
                                 _logger.LogInformation($"REGISTER service info to server:{host} then server response result:{content} status:{resp.StatusCode}");
 
@@ -127,6 +127,7 @@ namespace AgileConfig.Client.RegisterCenter
                                     _uniqueId = JsonConvert.DeserializeObject<RegisterResult>(content).uniqueId;
 
                                     _logger.LogInformation($"REGISTER service info to server {host} success , uniqueId:{_uniqueId} serviceId:{_options.RegisterInfo.ServiceId} serviceName:{_options.RegisterInfo.ServiceName}");
+                                    break;
                                 }
                             }
                             catch (System.Exception ex)
@@ -135,6 +136,10 @@ namespace AgileConfig.Client.RegisterCenter
                             }
                         }
                     }
+                    else
+                    {
+                        break;
+                    }
                     await Task.Delay(5000);
                 }
             }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
@@ -142,7 +147,8 @@ namespace AgileConfig.Client.RegisterCenter
             return Task.CompletedTask;
         }
 
-        class RegisterResult{
+        class RegisterResult
+        {
             public string uniqueId { get; set; }
         }
     }
