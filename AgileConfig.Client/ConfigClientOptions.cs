@@ -109,10 +109,21 @@ namespace AgileConfig.Client
             var serviceName = config["AgileConfig:serviceRegister:serviceName"];
             var ip = config["AgileConfig:serviceRegister:ip"];
             var port = config["AgileConfig:serviceRegister:port"];
-
+            var checkUrl = config["AgileConfig:serviceRegister:check:url"];
+            var mode = config["AgileConfig:serviceRegister:check:mode"];
+            var metaData = new List<string>();
+            config.GetSection("AgileConfig:serviceRegister:metaData").Bind(metaData);
             options.RegisterInfo.ServiceId = serviceId;
             options.RegisterInfo.ServiceName = serviceName;
             options.RegisterInfo.Ip = ip;
+            options.RegisterInfo.CheckUrl = checkUrl;
+            if (string.IsNullOrWhiteSpace(mode))
+            {
+                mode = "server";
+            }
+            options.RegisterInfo.HeartBeatMode = mode;
+            options.RegisterInfo.MetaData = metaData;
+
             if (int.TryParse(port,out int iport))
             {
                 options.RegisterInfo.Port = iport;

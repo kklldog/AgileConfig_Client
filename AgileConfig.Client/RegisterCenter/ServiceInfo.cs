@@ -19,7 +19,6 @@ namespace AgileConfig.Client.RegisterCenter
     public class ServiceRegisterInfo: ServiceInfo
     {
         public string CheckUrl { get; set; } = "";
-
-        public int CheckInterval { get; set; } = 30;
+        public string HeartBeatMode { get; set; } = "server";
     }
 }
