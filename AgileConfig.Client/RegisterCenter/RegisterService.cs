@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AgileConfig.Client.RegisterCenter.Heartbeats;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Text;
 using System.Threading;
@@ -14,15 +15,35 @@ namespace AgileConfig.Client.RegisterCenter
 
     public class RegisterService : IRegisterService
     {
-        private ConfigClientOptions _options;
+        private IConfigClient _configClient;
         private ILogger _logger;
+        private ILoggerFactory _loggerFactory;
         private string _uniqueId = "";
         private CancellationTokenSource _cancellationTokenSource;
+        private HeartbeatService _heartbeatService;
 
-        public RegisterService(ConfigClientOptions options, ILogger logger)
+        public RegisterService(IConfigClient client, ILoggerFactory loggerFactory)
         {
-            _options = options;
-            _logger = logger;
+            _configClient = client;
+            _loggerFactory = loggerFactory;
+            _logger = _loggerFactory.CreateLogger<RegisterService>();
+            _heartbeatService = new HeartbeatService(client, loggerFactory);
+            if (client.Options.RegisterInfo?.HeartBeatMode == "client")
+            {
+                //客户端主动心跳
+                _heartbeatService.Start(() =>
+                {
+                    return this._uniqueId;
+                });
+            }
+        }
+
+        private ConfigClientOptions _options
+        {
+            get
+            {
+                return _configClient.Options;
+            }
         }
 
         //是否注册成功

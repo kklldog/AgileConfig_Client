@@ -37,6 +37,14 @@ namespace AgileConfig.Client
         private string LocalCacheFileName => Path.Combine(_options.CacheDirectory, $"{_options.AppId}.agileconfig.client.configs.cache");
         public static IConfigClient Instance = null;
 
+        public ClientWebSocket WebSocket
+        {
+            get
+            {
+                return _WebsocketClient;
+            }
+        }
+
         private ILogger ConsoleLogger
         {
             get

@@ -12,7 +12,7 @@ namespace AgileConfig.Client.RegisterCenter
         public RegiserHostedService(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
-            _registerService = new RegisterService(ConfigClient.Instance.Options, _loggerFactory.CreateLogger<RegisterService>());
+            _registerService = new RegisterService(ConfigClient.Instance, _loggerFactory);
         }
         public async Task StartAsync(CancellationToken cancellationToken)
         {

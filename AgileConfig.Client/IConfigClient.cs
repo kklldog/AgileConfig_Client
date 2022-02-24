@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 using AgileConfig.Protocol;
 using Microsoft.Extensions.Logging;
@@ -43,6 +44,8 @@ namespace AgileConfig.Client
         ILogger Logger { get; set; }
 
         ConfigClientOptions Options { get; }
+
+        ClientWebSocket WebSocket { get;  }
 
     }
 }
