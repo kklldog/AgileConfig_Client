@@ -19,7 +19,7 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
             _picker = new HeartbeatChannelPicker(client, loggerFactory);
         }
 
-        public void Start(Func<string> getId)
+        public void Start(Func<string> getId, Action<string> callback)
         {
             Task.Factory.StartNew(async ()=> {
                 while (true)
@@ -30,6 +30,7 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
                         var channel = _picker.Pick();
                         await channel.SendAsync(uniqueId, (str) => {
                             _logger.LogTrace($"service {uniqueId} heartbeat result : {str}");
+                            callback?.Invoke(str);
                         });
                     }
                    

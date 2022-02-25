@@ -125,8 +125,8 @@ namespace AgileConfig.Client
             }
             var ip = config["AgileConfig:serviceRegister:ip"];
             var port = config["AgileConfig:serviceRegister:port"];
-            var checkUrl = config["AgileConfig:serviceRegister:check:url"];
-            var mode = config["AgileConfig:serviceRegister:check:mode"];
+            var checkUrl = config["AgileConfig:serviceRegister:heartbeat:url"];
+            var mode = config["AgileConfig:serviceRegister:heartbeat:mode"];
             var metaData = new List<string>();
             config.GetSection("AgileConfig:serviceRegister:metaData").Bind(metaData);
 
@@ -136,7 +136,7 @@ namespace AgileConfig.Client
             options.RegisterInfo.CheckUrl = checkUrl;
             if (string.IsNullOrWhiteSpace(mode))
             {
-                mode = "server";
+                mode = "client";
             }
             options.RegisterInfo.HeartBeatMode = mode;
             options.RegisterInfo.MetaData = metaData;

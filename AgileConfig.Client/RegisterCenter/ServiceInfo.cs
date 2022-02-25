@@ -2,6 +2,12 @@
 
 namespace AgileConfig.Client.RegisterCenter
 {
+    public enum ServiceStatus
+    {
+        Offline = 0,
+        Online = 1
+    }
+
     public class ServiceInfo
     {
         public string ServiceId { get; set; } = "";
@@ -13,7 +19,8 @@ namespace AgileConfig.Client.RegisterCenter
         public int? Port { get; set; }
 
         public List<string> MetaData { get; set; } = new List<string>();
-
+        
+        public ServiceStatus Status { get; set; }
     }
 
     public class ServiceRegisterInfo: ServiceInfo

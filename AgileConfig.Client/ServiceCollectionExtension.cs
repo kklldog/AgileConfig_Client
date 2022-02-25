@@ -14,6 +14,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 ConfigClient.Instance.Logger = GetLogger(services);
                 return ConfigClient.Instance;
             });
+            services.AddSingleton<IRegisterService, RegisterService>();
+            services.AddSingleton<IDiscoveryService,DiscoveryService>();
+            services.AddSingleton<DiscoveryService>();
             services.AddHostedService<RegiserHostedService>();
         }
 

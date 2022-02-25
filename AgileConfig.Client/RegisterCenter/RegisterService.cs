@@ -9,6 +9,9 @@ namespace AgileConfig.Client.RegisterCenter
 {
     public interface IRegisterService
     {
+        bool Registered { get; }
+        string UniqueId { get; }
+
         Task RegisterAsync();
         Task UnRegisterAsync();
     }
@@ -20,21 +23,20 @@ namespace AgileConfig.Client.RegisterCenter
         private ILoggerFactory _loggerFactory;
         private string _uniqueId = "";
         private CancellationTokenSource _cancellationTokenSource;
-        private HeartbeatService _heartbeatService;
 
         public RegisterService(IConfigClient client, ILoggerFactory loggerFactory)
         {
             _configClient = client;
             _loggerFactory = loggerFactory;
             _logger = _loggerFactory.CreateLogger<RegisterService>();
-            _heartbeatService = new HeartbeatService(client, loggerFactory);
-            if (client.Options.RegisterInfo?.HeartBeatMode == "client")
+
+        }
+
+        public string UniqueId
+        {
+            get
             {
-                //客户端主动心跳
-                _heartbeatService.Start(() =>
-                {
-                    return this._uniqueId;
-                });
+                return _uniqueId;
             }
         }
 

@@ -31,6 +31,28 @@ namespace AgileConfig.Client
             return response;
         }
 
+        public static async Task<HttpWebResponse> GetAsync(string url, Dictionary<string, string> headers, int? timeout)
+        {
+            var request = WebRequest.Create(url) as HttpWebRequest;
+            request.Method = "GET";
+            if (timeout.HasValue)
+            {
+                request.Timeout = timeout.Value;
+            }
+
+            if (headers != null)
+            {
+                foreach (var keyValuePair in headers)
+                {
+                    request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+                }
+            }
+
+            var response = (await request.GetResponseAsync()) as HttpWebResponse;
+
+            return response;
+        }
+
         public static async Task<HttpWebResponse> PostAsync(string url, Dictionary<string, string> headers, byte[] body, int? timeout, string contentType)
         {
             var request = WebRequest.Create(url) as HttpWebRequest;
