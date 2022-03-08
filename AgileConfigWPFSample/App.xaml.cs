@@ -21,7 +21,7 @@ namespace AgileConfigWPFSample
             var appId = "test_app";
             var secret = "";
             var nodes = "http://agileconfig.xbaby.xyz:5000";
-            ConfigClient = new ConfigClient(appId, secret, nodes);
+            ConfigClient = new ConfigClient(appId, secret, nodes, "DEV");
             ConfigClient.Name = "wpfconfigclient";
             ConfigClient.Tag = "t1";
             ConfigClient.ConnectAsync().GetAwaiter();
