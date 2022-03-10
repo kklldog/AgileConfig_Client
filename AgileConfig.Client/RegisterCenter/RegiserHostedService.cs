@@ -41,10 +41,10 @@ namespace AgileConfig.Client.RegisterCenter
                     return;
                 }
 
-                var result = JsonConvert.DeserializeObject<HeartbeatResult>(str);
-                if (result != null)
+                if (str.StartsWith("S:"))
                 {
-                    if (!result.DataVersion.Equals(_discoveryService.DataVersion, System.StringComparison.CurrentCultureIgnoreCase))
+                    var ver = str.Substring(2, str.Length - 2);
+                    if (!ver.Equals(_discoveryService.DataVersion, System.StringComparison.CurrentCultureIgnoreCase))
                     {
                         //如果服务端跟客户端的版本不一样直接刷新
                         _ = _discoveryService.RefreshAsync();

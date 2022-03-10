@@ -36,19 +36,19 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
 
                     if (resp.StatusCode == System.Net.HttpStatusCode.OK)
                     {
-                        _logger.LogTrace("HttpChannel send a heartbeat to postUrl success .");
+                        _logger.LogTrace($"HttpChannel send a heartbeat to {postUrl} success .");
 
                         var content = await HttpUtil.GetResponseContentAsync(resp);
                         receiver?.Invoke(content);
                     }
                     else
                     {
-                        _logger.LogTrace($"HttpChannel send a heartbeat to postUrl fail , status code {resp.StatusCode} .");
+                        _logger.LogTrace($"HttpChannel send a heartbeat to {postUrl} fail , status code {resp.StatusCode} .");
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "HttpChannel send a heartbeat to postUrl error .");
+                    _logger.LogError(ex, $"HttpChannel send a heartbeat to {postUrl} error .");
                 }
             }
         }

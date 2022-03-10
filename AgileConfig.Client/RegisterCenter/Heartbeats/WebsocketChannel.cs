@@ -13,11 +13,18 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
     {
         private IConfigClient _client;
         private ILogger _logger;
+        private Action<string> _messageReceiver;
 
         public WebsocketChannel(IConfigClient client, ILogger logger)
         {
             _client = client;
             _logger = logger;
+            MessageCenter.Subscribe += (str) =>
+            {
+                Task.Run(()=> { 
+                    _messageReceiver?.Invoke(str);
+                });
+            };
         }
 
         private ClientWebSocket Websocket
@@ -30,35 +37,20 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
 
         public async Task SendAsync(string id, Action<string> receiver)
         {
+            _messageReceiver = receiver;
             if (Websocket.State == WebSocketState.Open)
             {
                 try
                 {
-                    var data = Encoding.UTF8.GetBytes(id);
+                    var msg = $"S:{id}";
+                    var data = Encoding.UTF8.GetBytes(msg);
                     await Websocket.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
                             CancellationToken.None).ConfigureAwait(false);
-
-                    ArraySegment<Byte> buffer = new ArraySegment<byte>(new Byte[1024 * 2]);
-                    var result = await Websocket.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
-
-                    using (var ms = new MemoryStream())
-                    {
-                        ms.Write(buffer.Array, buffer.Offset, result.Count);
-                        if (result.MessageType == WebSocketMessageType.Text)
-                        {
-                            ms.Seek(0, SeekOrigin.Begin);
-                            using (var reader = new StreamReader(ms, Encoding.UTF8))
-                            {
-                                var content = await reader.ReadToEndAsync().ConfigureAwait(false);
-
-                                receiver?.Invoke(content);
-                            }
-                        }
-                    }
-
+                    _logger.LogTrace($"WebsocketChannel send a heartbeat to server success .");
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, $"WebsocketChannel send a heartbeat to server error .");
                 }
             }
         }

@@ -558,8 +558,87 @@ namespace AgileConfig.Client
             }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
 
+        private async Task TryCompareVersion(string msg)
+        {
+            var version = msg.Substring(2, msg.Length - 2);
+            var localVersion = this.DataMd5Version();
+            if (version != localVersion)
+            {
+                //如果数据库版本跟本地版本不一致则直接全部更新
+                await Load();
+            }
+        }
+
+        private async Task TryHandleAction(string msg)
+        {
+            try
+            {
+                var action = JsonConvert.DeserializeObject<WebsocketAction>(msg);
+                if (action != null)
+                {
+                    var dict = Data;
+                    var itemKey = "";
+                    if (action.Item != null)
+                    {
+                        itemKey = GenerateKey(action.Item);
+                    }
+                    switch (action.Action)
+                    {
+                        case ActionConst.Offline:
+                            _adminSayOffline = true;
+                            await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
+                            this.Status = ConnectStatus.Disconnected;
+                            Logger?.LogTrace("client offline because admin console send a command 'offline' ,");
+                            NoticeChangedAsync(ActionConst.Offline);
+                            break;
+                        case ActionConst.Reload:
+                            if (await Load())
+                            {
+                                NoticeChangedAsync(ActionConst.Reload);
+                            };
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "cannot handle websocket message {0}", msg);
+            }
+        }
+
+        /// <summary>
+        ///  V: P: 打头的是代表配置中心心跳的消息
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        private bool IsConfigClientHeartBeatReturnMsg (string msg)
+        {
+            return msg.StartsWith("V:") || msg.StartsWith("P:");
+        }
+
+        /// <summary>
+        ///  判断是否是配置中心需要client执行某个动作的消息
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        private bool IsConfigClientWSActionMsg(string msg)
+        {
+            try
+            {
+                var action = JsonConvert.DeserializeObject<WebsocketAction>(msg);
+                return action != null;
+            }
+            catch 
+            {
+                return false;
+            }
+        }
+
         /// <summary>
         /// 最终处理服务端推送的消息
+        /// V: P: 打头的是代表配置中心心跳的消息 S: 打头的代表服务注册中心的回复消息
         /// </summary>
         private async void ProcessMessage(WebSocketReceiveResult result, ArraySegment<Byte> buffer)
         {
@@ -577,52 +656,18 @@ namespace AgileConfig.Client
                         {
                             return;
                         }
-                        if (msg.StartsWith("V:"))
+                        if (IsConfigClientHeartBeatReturnMsg(msg))
                         {
-                            var version = msg.Substring(2, msg.Length - 2);
-                            var localVersion = this.DataMd5Version();
-                            if (version != localVersion)
-                            {
-                                //如果数据库版本跟本地版本不一致则直接全部更新
-                                await Load();
-                            }
+                            await TryCompareVersion(msg);
                             return;
                         }
-                        try
+                        if (IsConfigClientWSActionMsg(msg))
                         {
-                            var action = JsonConvert.DeserializeObject<WebsocketAction>(msg);
-                            if (action != null)
-                            {
-                                var dict = Data as ConcurrentDictionary<string, string>;
-                                var itemKey = "";
-                                if (action.Item != null)
-                                {
-                                    itemKey = GenerateKey(action.Item);
-                                }
-                                switch (action.Action)
-                                {
-                                    case ActionConst.Offline:
-                                        _adminSayOffline = true;
-                                        await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
-                                        this.Status = ConnectStatus.Disconnected;
-                                        Logger?.LogTrace("client offline because admin console send a command 'offline' ,");
-                                        NoticeChangedAsync(ActionConst.Offline);
-                                        break;
-                                    case ActionConst.Reload:
-                                        if (await Load())
-                                        {
-                                            NoticeChangedAsync(ActionConst.Reload);
-                                        };
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
+                            await TryHandleAction(msg);
+                            return;
                         }
-                        catch (Exception ex)
-                        {
-                            Logger?.LogError(ex, "cannot handle websocket message {0}", msg);
-                        }
+
+                        MessageCenter.Receive(msg);
                     }
                 }
             }
