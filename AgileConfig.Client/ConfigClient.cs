@@ -35,7 +35,12 @@ namespace AgileConfig.Client
         private List<ConfigItem> _configs = new List<ConfigItem>();
         private ILogger _consoleLogger;
         private string LocalCacheFileName => Path.Combine(_options.CacheDirectory, $"{_options.AppId}.agileconfig.client.configs.cache");
-        public static IConfigClient Instance = null;
+        
+        /// <summary>
+        /// client的实例对象，每次new的时候构造函数会吧this直接赋值给Instance，
+        /// 一般来说你可以直接使用这个属性来拿到client对象，但是如果你手动new多个client的话，这个Instance代表最后new的那一个client。
+        /// </summary>
+        public static IConfigClient Instance { get; private set; }
 
         public ClientWebSocket WebSocket
         {
@@ -247,6 +252,7 @@ namespace AgileConfig.Client
             }
 
             this.SetOptions(options);
+            Instance = this;
         }
 
         public ConfigClient(string json = "appsettings.json")
@@ -256,6 +262,7 @@ namespace AgileConfig.Client
 
             var options = ConfigClientOptions.FromLocalAppsettings(json);
             this.SetOptions(options);
+            Instance = this;
         }
 
         public ConfigClient(IConfiguration configuration, ILogger logger = null)
@@ -275,6 +282,7 @@ namespace AgileConfig.Client
             var options = ConfigClientOptions.FromConfiguration(configuration);
             options.Logger = logger;
             this.SetOptions(options);
+            Instance = this;
         }
 
         public ConfigClient(string appId, string secret, string serverNodes, string env, ILogger logger = null)
@@ -295,6 +303,7 @@ namespace AgileConfig.Client
             options.ENV = env;
             options.Logger = logger;
             this.SetOptions(options);
+            Instance = this;
         }
 
         /// <summary>
@@ -617,23 +626,14 @@ namespace AgileConfig.Client
         {
             return msg.StartsWith("V:") || msg.StartsWith("P:");
         }
-
         /// <summary>
-        ///  判断是否是配置中心需要client执行某个动作的消息
+        ///  S: 打头的是代表服务注册发现的心跳的消息
         /// </summary>
         /// <param name="msg"></param>
         /// <returns></returns>
-        private bool IsConfigClientWSActionMsg(string msg)
+        private bool IsRegisterCenterHeartBeatReturnMsg (string msg)
         {
-            try
-            {
-                var action = JsonConvert.DeserializeObject<WebsocketAction>(msg);
-                return action != null;
-            }
-            catch 
-            {
-                return false;
-            }
+            return msg.StartsWith("S:");
         }
 
         /// <summary>
@@ -656,18 +656,21 @@ namespace AgileConfig.Client
                         {
                             return;
                         }
+
+                        if (IsRegisterCenterHeartBeatReturnMsg(msg))
+                        {
+                            MessageCenter.Receive(msg);
+                            return;
+                        }
+
                         if (IsConfigClientHeartBeatReturnMsg(msg))
                         {
                             await TryCompareVersion(msg);
                             return;
                         }
-                        if (IsConfigClientWSActionMsg(msg))
-                        {
-                            await TryHandleAction(msg);
-                            return;
-                        }
 
-                        MessageCenter.Receive(msg);
+                        await TryHandleAction(msg);
+                        return;
                     }
                 }
             }

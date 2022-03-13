@@ -10,7 +10,9 @@ namespace AgileConfig.Client
         public static event Action<string> Subscribe;
         public static void Receive(string message)
         {
-            Subscribe?.Invoke(message);
+            Task.Run(()=> {
+                Subscribe?.Invoke(message);
+            });
         }
     }
 

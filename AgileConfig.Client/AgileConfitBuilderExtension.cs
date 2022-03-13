@@ -13,8 +13,6 @@ namespace Microsoft.AspNetCore.Hosting
             this IConfigurationBuilder builder,
             IConfigClient client, Action<ConfigChangedArg> e = null)
         {
-            ConfigClient.Instance = client;
-
             if (e != null)
             {
                 client.ConfigChanged += e;
