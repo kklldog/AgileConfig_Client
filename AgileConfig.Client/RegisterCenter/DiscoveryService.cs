@@ -14,7 +14,6 @@ namespace AgileConfig.Client.RegisterCenter
         List<ServiceInfo> OfflineServices { get; }
         List<ServiceInfo> OnlineServices { get; }
         List<ServiceInfo> Services { get; }
-
         Task RefreshAsync();
     }
 
@@ -26,6 +25,8 @@ namespace AgileConfig.Client.RegisterCenter
 
         public DiscoveryService(IConfigClient client, ILoggerFactory loggerFactory)
         {
+            Instance = this;
+
             _services = new List<ServiceInfo>();
             _configClient = client;
             _logger = loggerFactory.CreateLogger<DiscoveryService>();
@@ -57,6 +58,11 @@ namespace AgileConfig.Client.RegisterCenter
             {
                 return _services.Where(x => x.Status == ServiceStatus.Offline).ToList();
             }
+        }
+
+        public static IDiscoveryService Instance
+        {
+            get; private set;
         }
 
         public async Task RefreshAsync()
