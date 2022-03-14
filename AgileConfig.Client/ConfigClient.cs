@@ -624,16 +624,16 @@ namespace AgileConfig.Client
         /// <returns></returns>
         private bool IsConfigClientHeartBeatReturnMsg (string msg)
         {
-            return msg.StartsWith("V:") || msg.StartsWith("P:");
+            return msg.StartsWith("V:") || msg.StartsWith("c:");
         }
         /// <summary>
-        ///  S: 打头的是代表服务注册发现的心跳的消息
+        ///  s:v: 打头的是代表服务注册发现的心跳的回复消息
         /// </summary>
         /// <param name="msg"></param>
         /// <returns></returns>
         private bool IsRegisterCenterHeartBeatReturnMsg (string msg)
         {
-            return msg.StartsWith("S:");
+            return msg.StartsWith("s:ping:");
         }
 
         /// <summary>

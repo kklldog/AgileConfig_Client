@@ -42,11 +42,11 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
             {
                 try
                 {
-                    var msg = $"S:{id}";
+                    var msg = $"s:ping:{id}";
                     var data = Encoding.UTF8.GetBytes(msg);
                     await Websocket.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
                             CancellationToken.None).ConfigureAwait(false);
-                    _logger.LogTrace($"WebsocketChannel send a heartbeat to server success .");
+                    _logger.LogTrace($"WebsocketChannel send a heartbeat message {msg} to server success .");
                 }
                 catch (Exception ex)
                 {

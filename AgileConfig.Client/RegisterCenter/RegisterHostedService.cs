@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace AgileConfig.Client.RegisterCenter
 {
-    public class RegiserHostedService : IHostedService
+    public class RegisterHostedService : IHostedService
     {
         private IRegisterService _registerService;
         private HeartbeatService _heartbeatService;
         private ILoggerFactory _loggerFactory;
         private IDiscoveryService _discoveryService;
-        public RegiserHostedService(IRegisterService registerServicer,
+        public RegisterHostedService(IRegisterService registerServicer,
             IDiscoveryService discoveryService,
             ILoggerFactory loggerFactory)
         {
@@ -24,7 +24,7 @@ namespace AgileConfig.Client.RegisterCenter
         }
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var logger = _loggerFactory.CreateLogger<RegiserHostedService>();
+            var logger = _loggerFactory.CreateLogger<RegisterHostedService>();
             logger.LogInformation("RegiserHostedService starting ...");
             logger.LogInformation("try to register serviceinfo to server .");
 
@@ -41,9 +41,9 @@ namespace AgileConfig.Client.RegisterCenter
                     return;
                 }
 
-                if (str.StartsWith("S:"))
+                if (str.StartsWith("s:ping:"))
                 {
-                    var ver = str.Substring(2, str.Length - 2);
+                    var ver = str.Substring(7, str.Length - 7);
                     if (!ver.Equals(_discoveryService.DataVersion, System.StringComparison.CurrentCultureIgnoreCase))
                     {
                         logger.LogInformation($"server service version is different from local version so refresh .");
@@ -57,7 +57,7 @@ namespace AgileConfig.Client.RegisterCenter
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            var logger = _loggerFactory.CreateLogger<RegiserHostedService>();
+            var logger = _loggerFactory.CreateLogger<RegisterHostedService>();
 
             logger.LogInformation("RegiserHostedService stoping ...");
             logger.LogInformation("try to unregister serviceinfo to server .");

@@ -17,7 +17,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IRegisterService, RegisterService>();
             services.AddSingleton<IDiscoveryService,DiscoveryService>();
             services.AddSingleton<DiscoveryService>();
-            services.AddHostedService<RegiserHostedService>();
+            services.AddHostedService<RegisterHostedService>();
         }
 
         private static ILogger GetLogger(IServiceCollection services)

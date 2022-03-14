@@ -45,15 +45,7 @@ namespace AgileConfig.Client.RegisterCenter
 
         public static ServiceInfo RandomOne(this IDiscoveryService ds, string serviceName)
         {
-            var list = GetByServiceName(ds, serviceName);
-            if (list?.Count() == 0)
-            {
-                return null;
-            }
-
-            var index = new Random().Next(list.Count());
-
-            return list.Skip(index).Take(1).First();
+            return ds.Services.RandomOne(serviceName);
         }
     }
 }
