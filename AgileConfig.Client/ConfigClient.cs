@@ -808,20 +808,9 @@ namespace AgileConfig.Client
             var valueStr = string.Join("&", Data.Values.ToArray().OrderBy(v => v));
             var txt = $"{keyStr}&{valueStr}";
 
-            using (var md5 = MD5.Create())
-            {
-                var inputBytes = Encoding.ASCII.GetBytes(txt);
-                var hashBytes = md5.ComputeHash(inputBytes);
+            var md5 = Encrypt.Md5(txt);
 
-                // Convert the byte array to hexadecimal string
-                var sb = new StringBuilder();
-                for (var i = 0; i < hashBytes.Length; i++)
-                {
-                    sb.Append(hashBytes[i].ToString("X2"));
-                }
-
-                return sb.ToString();
-            }
+            return md5;
         }
     }
 }

@@ -46,7 +46,7 @@ namespace AgileConfig.Client.RegisterCenter
                     var ver = str.Substring(7, str.Length - 7);
                     if (!ver.Equals(_discoveryService.DataVersion, System.StringComparison.CurrentCultureIgnoreCase))
                     {
-                        logger.LogInformation($"server service version is different from local version so refresh .");
+                        logger.LogInformation($"server return service version {ver} is different from local version {_discoveryService.DataVersion} so refresh .");
                         //如果服务端跟客户端的版本不一样直接刷新
                         _ = _discoveryService.RefreshAsync();
                     }

@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -81,11 +82,11 @@ namespace AgileConfig.Client.RegisterCenter
                         var content = await HttpUtil.GetResponseContentAsync(resp);
                         if (!string.IsNullOrEmpty(content))
                         {
-                            var result = JsonConvert.DeserializeObject<ServiceListResult>(content);
+                            var result = JsonConvert.DeserializeObject<List<ServiceInfo>>(content);
                             if (result != null)
                             {
-                                this.DataVersion = result.DataVersion;
-                                this._services = result.Data;
+                                this._services = result;
+                                this.DataVersion = GenerateMD5(result);
                             }
                         }
                     }
@@ -101,11 +102,25 @@ namespace AgileConfig.Client.RegisterCenter
             }
         }
 
-        class ServiceListResult
-        {
-            public string DataVersion { get; set; }
 
-            public List<ServiceInfo> Data { get; set; }
+        private string GenerateMD5(List<ServiceInfo> services)
+        {
+            var plain = new StringBuilder();
+            foreach (var serviceInfo in services.OrderBy(x => x.ServiceId))
+            {
+                var metaDataStr = "";
+                if (serviceInfo.MetaData != null)
+                {
+                    metaDataStr = string.Join(",", serviceInfo.MetaData.OrderBy(x=>x));
+                }
+                plain.Append($"{serviceInfo.ServiceId}&{serviceInfo.ServiceName}&{serviceInfo.Ip}&{serviceInfo.Port}&{(int)serviceInfo.Status}&{metaDataStr}&");
+            }
+
+            var txt = plain.ToString();
+            var md5 = Encrypt.Md5(txt);
+
+            return md5;
         }
+
     }
 }
