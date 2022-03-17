@@ -63,8 +63,9 @@ namespace AgileConfig.Client
                 }
             }
         }
-        public ILogger Logger { 
-            get 
+        public ILogger Logger
+        {
+            get
             {
                 if (_logger == null)
                 {
@@ -174,8 +175,19 @@ namespace AgileConfig.Client
                 throw new ArgumentNullException(nameof(json));
 
             //读取本地配置
+            var rootDir = Directory.GetCurrentDirectory();
+            var jsonFile = Path.Combine(rootDir, json);
+            if (!File.Exists(jsonFile))
+            {
+                rootDir = AppDomain.CurrentDomain.BaseDirectory;
+                jsonFile = Path.Combine(rootDir, json);
+                if (!File.Exists(jsonFile))
+                {
+                    throw new FileNotFoundException("Can nof find app config file .", jsonFile);
+                }
+            }
             var localconfig = new ConfigurationBuilder()
-                             .SetBasePath(Directory.GetCurrentDirectory())
+                             .SetBasePath(rootDir)
                              .AddJsonFile(json).AddEnvironmentVariables().Build();
             //从本地配置里读取AgileConfig的相关信息
             var configSection = localconfig.GetSection("AgileConfig");
