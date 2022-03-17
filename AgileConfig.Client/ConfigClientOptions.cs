@@ -32,13 +32,39 @@ namespace AgileConfig.Client
 
         public Action<ConfigChangedArg> ConfigChanged;
 
+        /// <summary>
+        /// 确定当前目录是否存在 json 配置文件，使用多种获取目录的形式来确认。
+        /// 如果存在则返回当前目录的确切路径。
+        /// </summary>
+        /// <param name="json"></param>
+        /// <returns></returns>
+        private static string EnsureCurrentDirectory(string json)
+        {
+            var rootDir = Directory.GetCurrentDirectory();
+            var jsonFile = Path.Combine(rootDir, json);
+            if (!File.Exists(jsonFile))
+            {
+                rootDir = AppDomain.CurrentDomain.BaseDirectory;
+                jsonFile = Path.Combine(rootDir, json);
+                if (!File.Exists(jsonFile))
+                {
+                    throw new FileNotFoundException("Can nof find app config file .", jsonFile);
+                }
+            }
+
+            return rootDir;
+        }
+
+
         public static ConfigClientOptions FromLocalAppsettingsOrEmpty(string json = "appsettings.json")
         {
             if (string.IsNullOrWhiteSpace(json))
                 throw new ArgumentNullException(nameof(json));
 
+            var rootDir = EnsureCurrentDirectory(json);
+
             var localconfig = new ConfigurationBuilder()
-                             .SetBasePath(Directory.GetCurrentDirectory())
+                             .SetBasePath(rootDir)
                              .AddJsonFile(json).AddEnvironmentVariables().Build();
 
             var configSection = localconfig.GetSection("AgileConfig");
@@ -55,8 +81,10 @@ namespace AgileConfig.Client
             if (string.IsNullOrWhiteSpace(json))
                 throw new ArgumentNullException(nameof(json));
 
+            var rootDir = EnsureCurrentDirectory(json);
+
             var localconfig = new ConfigurationBuilder()
-                             .SetBasePath(Directory.GetCurrentDirectory())
+                             .SetBasePath(rootDir)
                              .AddJsonFile(json).AddEnvironmentVariables().Build();
 
             return FromConfiguration(localconfig);
