@@ -19,13 +19,21 @@ namespace AgileConfig.Client.MessageHandlers
                 return false;
             }
 
-            var action = JsonConvert.DeserializeObject<WebsocketAction>(message);
-            if (action == null)
+            try
             {
-                return false;
+                var action = JsonConvert.DeserializeObject<WebsocketAction>(message);
+                if (action == null)
+                {
+                    return false;
+                }
+
+                return action.Module == ActionModule.ConfigCenter;
+            }
+            catch 
+            {
             }
 
-            return action.Module == ActionModule.ConfigCenter;
+            return false;
         }
 
         public static async Task Handle(string message, ConfigClient client)

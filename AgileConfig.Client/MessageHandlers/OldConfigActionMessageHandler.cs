@@ -19,17 +19,22 @@ namespace AgileConfig.Client.MessageHandlers
                 return false;
             }
 
-            var action = JsonConvert.DeserializeObject<WebsocketAction>(message);
-            if (action == null)
+            try
             {
-                return false;
+                var action = JsonConvert.DeserializeObject<WebsocketAction>(message);
+                if (action == null)
+                {
+                    return false;
+                }
+                if (string.IsNullOrEmpty(action.Module))
+                {
+                    return true;
+                }
             }
-
-            if (string.IsNullOrEmpty(action.Module))
+            catch 
             {
-                return true;
             }
-
+           
             return false;
         }
 
