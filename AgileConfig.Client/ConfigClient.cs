@@ -369,6 +369,7 @@ namespace AgileConfig.Client
             client.Options.SetRequestHeader("appid", AppId);
             client.Options.SetRequestHeader("env", Env);
             client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(AppId, Secret));
+            client.Options.SetRequestHeader("client-v", AssemablyUtil.GetVer());
 
             var randomServer = new RandomServers(ServerNodes);
             int failCount = 0;
