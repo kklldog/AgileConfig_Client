@@ -87,6 +87,7 @@ namespace AgileConfig.Client.RegisterCenter
                             {
                                 this._services = result;
                                 this.DataVersion = GenerateMD5(result);
+                                _logger.LogTrace($"DiscoveryService refresh all services success by API {getUrl} , status code {resp.StatusCode} .");
                             }
                         }
                         break;
