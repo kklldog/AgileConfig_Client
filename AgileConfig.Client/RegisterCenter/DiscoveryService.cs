@@ -89,6 +89,7 @@ namespace AgileConfig.Client.RegisterCenter
                                 this.DataVersion = GenerateMD5(result);
                             }
                         }
+                        break;
                     }
                     else
                     {
@@ -111,7 +112,7 @@ namespace AgileConfig.Client.RegisterCenter
                 var metaDataStr = "";
                 if (serviceInfo.MetaData != null)
                 {
-                    metaDataStr = string.Join(",", serviceInfo.MetaData.OrderBy(x=>x));
+                    metaDataStr = string.Join(",", serviceInfo.MetaData.OrderBy(x => x));
                 }
                 plain.Append($"{serviceInfo.ServiceId}&{serviceInfo.ServiceName}&{serviceInfo.Ip}&{serviceInfo.Port}&{(int)serviceInfo.Status}&{metaDataStr}&");
             }
