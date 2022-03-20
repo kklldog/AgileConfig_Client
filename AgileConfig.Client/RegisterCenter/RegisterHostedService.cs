@@ -1,4 +1,5 @@
 ﻿using AgileConfig.Client.RegisterCenter.Heartbeats;
+using AgileConfig.Protocol;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -34,16 +35,16 @@ namespace AgileConfig.Client.RegisterCenter
             {
                 return _registerService.UniqueId;
             },
-            (str) =>
+            (act) =>
             {
-                if (string.IsNullOrEmpty(str))
+                if (act == null)
                 {
                     return;
                 }
 
-                if (str.StartsWith("s:ping:"))
+                if (act.Action == ActionConst.Ping)
                 {
-                    var ver = str.Substring(7, str.Length - 7);
+                    var ver = act.Data ?? "";
                     if (!ver.Equals(_discoveryService.DataVersion, System.StringComparison.CurrentCultureIgnoreCase))
                     {
                         logger.LogInformation($"server return service version {ver} is different from local version {_discoveryService.DataVersion} so refresh .");

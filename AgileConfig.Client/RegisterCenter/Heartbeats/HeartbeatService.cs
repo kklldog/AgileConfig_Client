@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AgileConfig.Client.MessageHandlers;
+using AgileConfig.Protocol;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -19,7 +21,7 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
             _picker = new HeartbeatChannelPicker(client, loggerFactory);
         }
 
-        public void Start(Func<string> getId, Action<string> callback)
+        public void Start(Func<string> getId, Action<WebsocketAction> callback)
         {
             Task.Factory.StartNew(async ()=> {
                 while (true)
@@ -29,8 +31,11 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
                     {
                         var channel = _picker.Pick();
                         await channel.SendAsync(uniqueId, (str) => {
-                            _logger.LogTrace($"service {uniqueId} heartbeat result : {str}");
-                            callback?.Invoke(str);
+                            if (RegisterCenterActionMessageHandler.Hit(str))
+                            {
+                                _logger.LogTrace($"service {uniqueId} heartbeat result : {str}");
+                                callback?.Invoke(JsonConvert.DeserializeObject<WebsocketAction>(str));
+                            }
                         });
                     }
                    

@@ -1,4 +1,5 @@
-﻿using AgileConfig.Protocol;
+﻿using AgileConfig.Client.MessageHandlers;
+using AgileConfig.Protocol;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -568,30 +569,12 @@ namespace AgileConfig.Client
             }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
 
-        private async Task TryCompareVersion(string msg)
-        {
-            var version = msg.Substring(2, msg.Length - 2);
-            var localVersion = this.DataMd5Version();
-            if (version != localVersion)
-            {
-                //如果数据库版本跟本地版本不一致则直接全部更新
-                await Load();
-            }
-        }
-
-        private async Task TryHandleAction(string msg)
+        public async Task TryHandleAction(WebsocketAction action)
         {
             try
             {
-                var action = JsonConvert.DeserializeObject<WebsocketAction>(msg);
                 if (action != null)
                 {
-                    var dict = Data;
-                    var itemKey = "";
-                    if (action.Item != null)
-                    {
-                        itemKey = GenerateKey(action.Item);
-                    }
                     switch (action.Action)
                     {
                         case ActionConst.Offline:
@@ -607,6 +590,13 @@ namespace AgileConfig.Client
                                 NoticeChangedAsync(ActionConst.Reload);
                             };
                             break;
+                        case ActionConst.Ping:
+                            var localVersion = this.DataMd5Version();
+                            if (action.Data != localVersion)
+                            {
+                                await Load();
+                            }
+                            break;
                         default:
                             break;
                     }
@@ -614,32 +604,12 @@ namespace AgileConfig.Client
             }
             catch (Exception ex)
             {
-                Logger?.LogError(ex, "cannot handle websocket message {0}", msg);
+                Logger?.LogError(ex, "cannot handle websocket action , {0}", $"Module: {action.Module} Action: {action.Action} Data: {action.Data}");
             }
         }
 
         /// <summary>
-        ///  V: P: 打头的是代表配置中心心跳的消息
-        /// </summary>
-        /// <param name="msg"></param>
-        /// <returns></returns>
-        private bool IsConfigClientHeartBeatReturnMsg (string msg)
-        {
-            return msg.StartsWith("V:") || msg.StartsWith("c:");
-        }
-        /// <summary>
-        ///  s:v: 打头的是代表服务注册发现的心跳的回复消息
-        /// </summary>
-        /// <param name="msg"></param>
-        /// <returns></returns>
-        private bool IsRegisterCenterHeartBeatReturnMsg (string msg)
-        {
-            return msg.StartsWith("s:ping:");
-        }
-
-        /// <summary>
-        /// 最终处理服务端推送的消息
-        /// V: P: 打头的是代表配置中心心跳的消息 S: 打头的代表服务注册中心的回复消息
+        /// 分发到消息到处理类
         /// </summary>
         private async void ProcessMessage(WebSocketReceiveResult result, ArraySegment<Byte> buffer)
         {
@@ -653,25 +623,32 @@ namespace AgileConfig.Client
                     {
                         var msg = await reader.ReadToEndAsync().ConfigureAwait(false);
                         Logger?.LogTrace("client receive message ' {0} ' from server .", msg);
-                        if (string.IsNullOrEmpty(msg) || msg == "0")
+                        if (DropMessageHandler.Hit(msg))
                         {
                             return;
                         }
-
-                        if (IsRegisterCenterHeartBeatReturnMsg(msg))
+                        #region old message handlers
+                        if (OldConfigPingRetrunMessageHandler.Hit(msg))
                         {
-                            MessageCenter.Receive(msg);
+                            await OldConfigPingRetrunMessageHandler.Handle(msg, this);
+                            return;
+                        }
+                        if (OldConfigActionMessageHandler.Hit(msg))
+                        {
+                            await OldConfigActionMessageHandler.Handle(msg, this);
+                            return;
+                        }
+                        #endregion
+
+                        if (ConfigCenterActionMessageHandler.Hit(msg))
+                        {
+                            await ConfigCenterActionMessageHandler.Handle(msg, this);
                             return;
                         }
 
-                        if (IsConfigClientHeartBeatReturnMsg(msg))
-                        {
-                            await TryCompareVersion(msg);
-                            return;
-                        }
-
-                        await TryHandleAction(msg);
+                        MessageCenter.Receive(msg);
                         return;
+
                     }
                 }
             }
@@ -803,7 +780,7 @@ namespace AgileConfig.Client
             return File.ReadAllText(LocalCacheFileName);
         }
 
-        private string DataMd5Version()
+        public string DataMd5Version()
         {
             var keyStr = string.Join("&", Data.Keys.ToArray().OrderBy(k => k));
             var valueStr = string.Join("&", Data.Values.ToArray().OrderBy(v => v));
