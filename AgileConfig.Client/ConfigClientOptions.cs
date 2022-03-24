@@ -48,7 +48,7 @@ namespace AgileConfig.Client
                 jsonFile = Path.Combine(rootDir, json);
                 if (!File.Exists(jsonFile))
                 {
-                    throw new FileNotFoundException("Can nof find app config file .", jsonFile);
+                    throw new FileNotFoundException("Can not find app config file .", jsonFile);
                 }
             }
 
