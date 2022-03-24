@@ -4,21 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace AgileConfig.Client.RegisterCenter
 {
-    public interface IDiscoveryService
-    {
-        string DataVersion { get; }
-        List<ServiceInfo> OfflineServices { get; }
-        List<ServiceInfo> OnlineServices { get; }
-        List<ServiceInfo> Services { get; }
-        Task RefreshAsync();
-    }
-
     public class DiscoveryService : IDiscoveryService
     {
         private List<ServiceInfo> _services;

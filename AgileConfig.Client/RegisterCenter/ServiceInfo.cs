@@ -27,5 +27,7 @@ namespace AgileConfig.Client.RegisterCenter
     {
         public string CheckUrl { get; set; } = "";
         public string HeartBeatMode { get; set; } = "server";
+
+        public int Interval { get; set; } = 30;
     }
 }

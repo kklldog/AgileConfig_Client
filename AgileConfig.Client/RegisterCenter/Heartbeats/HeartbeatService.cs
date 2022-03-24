@@ -14,6 +14,20 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
         IConfigClient _client;
         HeartbeatChannelPicker _picker;
         ILogger _logger;
+
+        private int Interval
+        {
+            get
+            {
+                if (_client.Options == null || _client.Options.RegisterInfo == null || _client.Options.RegisterInfo.Interval < 1)
+                {
+                    return 30;
+                }
+
+                return _client.Options.RegisterInfo.Interval;
+            }
+        }
+
         public HeartbeatService(IConfigClient client, ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<HeartbeatService>();
@@ -23,14 +37,16 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
 
         public void Start(Func<string> getId, Action<WebsocketAction> callback)
         {
-            Task.Factory.StartNew(async ()=> {
+            Task.Factory.StartNew(async () =>
+            {
                 while (true)
                 {
                     var uniqueId = getId();
                     if (!string.IsNullOrEmpty(uniqueId))
                     {
                         var channel = _picker.Pick();
-                        await channel.SendAsync(uniqueId, (str) => {
+                        await channel.SendAsync(uniqueId, (str) =>
+                        {
                             if (RegisterCenterActionMessageHandler.Hit(str))
                             {
                                 _logger.LogTrace($"service {uniqueId} heartbeat result : {str}");
@@ -38,8 +54,8 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
                             }
                         });
                     }
-                   
-                    await Task.Delay(1000 * 5);
+
+                    await Task.Delay(1000 * Interval);
                 }
             }, TaskCreationOptions.LongRunning);
         }

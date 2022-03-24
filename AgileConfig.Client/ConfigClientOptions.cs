@@ -155,6 +155,8 @@ namespace AgileConfig.Client
             var port = config["AgileConfig:serviceRegister:port"];
             var checkUrl = config["AgileConfig:serviceRegister:heartbeat:url"];
             var mode = config["AgileConfig:serviceRegister:heartbeat:mode"];
+            var heartbeatInverval = config["AgileConfig:serviceRegister:heartbeat:interval"];
+
             var metaData = new List<string>();
             config.GetSection("AgileConfig:serviceRegister:metaData").Bind(metaData);
 
@@ -171,6 +173,10 @@ namespace AgileConfig.Client
             if (int.TryParse(port,out int iport))
             {
                 options.RegisterInfo.Port = iport;
+            }
+            if (int.TryParse(heartbeatInverval, out int IheartbeatInverval))
+            {
+                options.RegisterInfo.Interval = IheartbeatInverval;
             }
 
             return options;
