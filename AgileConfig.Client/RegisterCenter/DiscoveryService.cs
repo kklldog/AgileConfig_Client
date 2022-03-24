@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -23,6 +24,16 @@ namespace AgileConfig.Client.RegisterCenter
         private List<ServiceInfo> _services;
         private IConfigClient _configClient;
         private ILogger _logger;
+        private ConfigClientOptions _options
+        {
+            get
+            {
+                return _configClient.Options;
+            }
+        }
+        private bool _isLoadFromLocal;
+
+        private string LocalCacheFileName => Path.Combine(_options?.CacheDirectory, $"{_options?.AppId}.agileconfig.client.services.cache");
 
         public DiscoveryService(IConfigClient client, ILoggerFactory loggerFactory)
         {
@@ -32,6 +43,17 @@ namespace AgileConfig.Client.RegisterCenter
             _configClient = client;
             _logger = loggerFactory.CreateLogger<DiscoveryService>();
             RefreshAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// 是否读取的事本地缓存的服务
+        /// </summary>
+        public bool IsLoadFromLocal
+        {
+            get
+            {
+                return _isLoadFromLocal;
+            }
         }
 
         public string DataVersion { get; private set; }
@@ -68,6 +90,7 @@ namespace AgileConfig.Client.RegisterCenter
 
         public async Task RefreshAsync()
         {
+            int failCount = 0;
             var random = new RandomServers(_configClient.Options.Nodes);
             while (!random.IsComplete)
             {   //随机一个节点尝试移除
@@ -85,8 +108,10 @@ namespace AgileConfig.Client.RegisterCenter
                             var result = JsonConvert.DeserializeObject<List<ServiceInfo>>(content);
                             if (result != null)
                             {
+                                this._isLoadFromLocal = false;
                                 this._services = result;
                                 this.DataVersion = GenerateMD5(result);
+                                WriteServiceInfosToLocal(content);
                                 _logger.LogTrace($"DiscoveryService refresh all services success by API {getUrl} , status code {resp.StatusCode} .");
                             }
                         }
@@ -99,11 +124,78 @@ namespace AgileConfig.Client.RegisterCenter
                 }
                 catch (Exception ex)
                 {
+                    failCount++;
                     _logger.LogError(ex, "DiscoveryService refresh all services error .");
+                }
+            }
+            if (failCount == random.ServerCount)
+            {
+                LoadServicesFromLocal();
+            }
+        }
+
+        /// <summary>
+        /// 从本地缓存文件加载服务信息
+        /// </summary>
+        private void LoadServicesFromLocal()
+        {
+            var fileContent = ReadServiceInfosContentFromLocal();
+            if (!string.IsNullOrEmpty(fileContent))
+            {
+                var result = JsonConvert.DeserializeObject<List<ServiceInfo>>(fileContent);
+                if (result != null)
+                {
+                    this._services = result;
+                    this.DataVersion = GenerateMD5(result);
+                    this._isLoadFromLocal = true;
+
+                    _logger?.LogTrace("client load all service infos from local file .");
                 }
             }
         }
 
+        /// <summary>
+        /// 保证cache文件夹存在
+        /// </summary>
+        private void EnsureCacheDir()
+        {
+            if (!string.IsNullOrWhiteSpace(_options.CacheDirectory) && !Directory.Exists(_options.CacheDirectory))
+            {
+                Directory.CreateDirectory(_options.CacheDirectory);
+            }
+        }
+
+        private void WriteServiceInfosToLocal(string content)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(content))
+                {
+                    return;
+                }
+                EnsureCacheDir();
+                File.WriteAllText(LocalCacheFileName, content);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "client try to cache all service infos to local but failed .");
+            }
+        }
+
+        /// <summary>
+        /// 尝试从本地文件读取缓存的服务信息
+        /// </summary>
+        /// <returns></returns>
+        private string ReadServiceInfosContentFromLocal()
+        {
+            EnsureCacheDir();
+            if (!File.Exists(LocalCacheFileName))
+            {
+                return "";
+            }
+
+            return File.ReadAllText(LocalCacheFileName);
+        }
 
         private string GenerateMD5(List<ServiceInfo> services)
         {
