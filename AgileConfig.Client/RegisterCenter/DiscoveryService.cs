@@ -42,41 +42,38 @@ namespace AgileConfig.Client.RegisterCenter
                     return;
                 }
 
-                Task.Run(() =>
+                try
                 {
-                    try
+                    if (RegisterCenterActionMessageHandler.Hit(str))
                     {
-                        if (RegisterCenterActionMessageHandler.Hit(str))
+                        var act = JsonConvert.DeserializeObject<ActionMessage>(str);
+                        if (act == null)
                         {
-                            var act = JsonConvert.DeserializeObject<ActionMessage>(str);
-                            if (act == null)
-                            {
-                                return;
-                            }
+                            return;
+                        }
 
-                            if (act.Action == ActionConst.Reload)
+                        if (act.Action == ActionConst.Reload)
+                        {
+                            _ = RefreshAsync();
+                            return;
+                        }
+                        if (act.Action == ActionConst.Ping)
+                        {
+                            var ver = act.Data ?? "";
+                            if (!ver.Equals(DataVersion, StringComparison.CurrentCultureIgnoreCase))
                             {
+                                _logger.LogInformation($"server return service infos version {ver} is different from local version {DataVersion} so refresh .");
+                                //如果服务端跟客户端的版本不一样直接刷新
                                 _ = RefreshAsync();
-                                return;
                             }
-                            if (act.Action == ActionConst.Ping)
-                            {
-                                var ver = act.Data ?? "";
-                                if (!ver.Equals(DataVersion, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    _logger.LogInformation($"server return service infos version {ver} is different from local version {DataVersion} so refresh .");
-                                    //如果服务端跟客户端的版本不一样直接刷新
-                                    _ = RefreshAsync();
-                                }
-                                return;
-                            }
+                            return;
                         }
                     }
-                    catch (Exception e)
-                    {
-                        _logger.LogError(e, $"DiscoveryService handle receive msg error . message: {str}");
-                    }
-                });
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, $"DiscoveryService handle receive msg error . message: {str}");
+                }
             };
         }
 
