@@ -26,33 +26,17 @@ namespace AgileConfig.Client.RegisterCenter
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             var logger = _loggerFactory.CreateLogger<RegisterHostedService>();
+
             logger.LogInformation("RegiserHostedService starting ...");
             logger.LogInformation("try to register serviceinfo to server .");
 
             await _registerService.RegisterAsync();
             //客户端心跳
-            _heartbeatService.Start(() =>
-            {
-                return _registerService.UniqueId;
-            },
-            (act) =>
-            {
-                if (act == null)
+            _heartbeatService.Start(
+                () =>
                 {
-                    return;
+                    return _registerService.UniqueId;
                 }
-
-                if (act.Action == ActionConst.Ping)
-                {
-                    var ver = act.Data ?? "";
-                    if (!ver.Equals(_discoveryService.DataVersion, System.StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        logger.LogInformation($"server return service version {ver} is different from local version {_discoveryService.DataVersion} so refresh .");
-                        //如果服务端跟客户端的版本不一样直接刷新
-                        _ = _discoveryService.RefreshAsync();
-                    }
-                }
-            }
             );
         }
 

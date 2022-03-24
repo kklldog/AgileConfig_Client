@@ -23,13 +23,12 @@ namespace AgileConfig.Protocol
 
     }
 
-    public class WebsocketAction
+    public class ActionMessage
     {
         public string Module { get; set; }
         public string Action { get; set; }
 
         public string Data { get; set; }
-
     }
 
     public class ActionModule

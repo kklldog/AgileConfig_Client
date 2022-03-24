@@ -15,7 +15,7 @@ namespace AgileConfig.Client.MessageHandlers
                 return false;
             }
 
-            var action = JsonConvert.DeserializeObject<WebsocketAction>(message);
+            var action = JsonConvert.DeserializeObject<ActionMessage>(message);
             if (action == null)
             {
                 return false;

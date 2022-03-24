@@ -35,7 +35,7 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
             _picker = new HeartbeatChannelPicker(client, loggerFactory);
         }
 
-        public void Start(Func<string> getId, Action<WebsocketAction> callback)
+        public void Start(Func<string> getId)
         {
             Task.Factory.StartNew(async () =>
             {
@@ -45,14 +45,7 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
                     if (!string.IsNullOrEmpty(uniqueId))
                     {
                         var channel = _picker.Pick();
-                        await channel.SendAsync(uniqueId, (str) =>
-                        {
-                            if (RegisterCenterActionMessageHandler.Hit(str))
-                            {
-                                _logger.LogTrace($"service {uniqueId} heartbeat result : {str}");
-                                callback?.Invoke(JsonConvert.DeserializeObject<WebsocketAction>(str));
-                            }
-                        });
+                        await channel.SendAsync(uniqueId);
                     }
 
                     await Task.Delay(1000 * Interval);

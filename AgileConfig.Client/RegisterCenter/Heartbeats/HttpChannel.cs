@@ -17,7 +17,7 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
             _options = options;
             _logger = logger;
         }
-        public async Task SendAsync(string serviceUniqueId, Action<string> receiver)
+        public async Task SendAsync(string serviceUniqueId)
         {
             var random = new RandomServers(_options.Nodes);
             var param = new
@@ -39,7 +39,7 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
                         _logger.LogTrace($"HttpChannel send a heartbeat to {postUrl} success .");
 
                         var content = await HttpUtil.GetResponseContentAsync(resp);
-                        receiver?.Invoke(content);
+                        MessageCenter.Receive(content); //往外发送消息
                     }
                     else
                     {

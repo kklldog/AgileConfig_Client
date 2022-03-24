@@ -13,18 +13,11 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
     {
         private IConfigClient _client;
         private ILogger _logger;
-        private Action<string> _messageReceiver;
 
         public WebsocketChannel(IConfigClient client, ILogger logger)
         {
             _client = client;
             _logger = logger;
-            MessageCenter.Subscribe += (str) =>
-            {
-                Task.Run(()=> { 
-                    _messageReceiver?.Invoke(str);
-                });
-            };
         }
 
         private ClientWebSocket Websocket
@@ -35,9 +28,8 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
             }
         }
 
-        public async Task SendAsync(string id, Action<string> receiver)
+        public async Task SendAsync(string id)
         {
-            _messageReceiver = receiver;
             if (Websocket.State == WebSocketState.Open)
             {
                 try

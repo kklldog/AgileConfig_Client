@@ -569,7 +569,7 @@ namespace AgileConfig.Client
             }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
 
-        public async Task TryHandleAction(WebsocketAction action)
+        public async Task TryHandleAction(ActionMessage action)
         {
             try
             {

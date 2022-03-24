@@ -21,7 +21,7 @@ namespace AgileConfig.Client.MessageHandlers
 
             try
             {
-                var action = JsonConvert.DeserializeObject<WebsocketAction>(message);
+                var action = JsonConvert.DeserializeObject<ActionMessage>(message);
                 if (action == null)
                 {
                     return false;
@@ -38,7 +38,7 @@ namespace AgileConfig.Client.MessageHandlers
 
         public static async Task Handle(string message, ConfigClient client)
         {
-            var action = JsonConvert.DeserializeObject<WebsocketAction>(message);
+            var action = JsonConvert.DeserializeObject<ActionMessage>(message);
             if (action != null)
             {
                 await client.TryHandleAction(action);

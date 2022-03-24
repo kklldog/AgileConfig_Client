@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AgileConfig.Client.MessageHandlers;
+using AgileConfig.Protocol;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -33,6 +35,49 @@ namespace AgileConfig.Client.RegisterCenter
             _configClient = client;
             _logger = loggerFactory.CreateLogger<DiscoveryService>();
             RefreshAsync().GetAwaiter().GetResult();
+            MessageCenter.Subscribe += (str) =>
+            {
+                if (string.IsNullOrWhiteSpace(str))
+                {
+                    return;
+                }
+
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        if (RegisterCenterActionMessageHandler.Hit(str))
+                        {
+                            var act = JsonConvert.DeserializeObject<ActionMessage>(str);
+                            if (act == null)
+                            {
+                                return;
+                            }
+
+                            if (act.Action == ActionConst.Reload)
+                            {
+                                _ = RefreshAsync();
+                                return;
+                            }
+                            if (act.Action == ActionConst.Ping)
+                            {
+                                var ver = act.Data ?? "";
+                                if (!ver.Equals(DataVersion, StringComparison.CurrentCultureIgnoreCase))
+                                {
+                                    _logger.LogInformation($"server return service infos version {ver} is different from local version {DataVersion} so refresh .");
+                                    //如果服务端跟客户端的版本不一样直接刷新
+                                    _ = RefreshAsync();
+                                }
+                                return;
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, $"DiscoveryService handle receive msg error . message: {str}");
+                    }
+                });
+            };
         }
 
         /// <summary>
