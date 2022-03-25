@@ -35,7 +35,7 @@ namespace AgileConfig.Client.RegisterCenter
         /// </summary>
         public string AlarmUrl { get; set; } = "";
 
-        public string HeartBeatMode { get; set; } = "server";
+        public string HeartBeatMode { get; set; } = "client";
 
         public int Interval { get; set; } = 30;
     }
