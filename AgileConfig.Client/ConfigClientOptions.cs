@@ -151,19 +151,20 @@ namespace AgileConfig.Client
             {
                 throw new ArgumentNullException("serviceRegister:serviceName");
             }
+
             var ip = config["AgileConfig:serviceRegister:ip"];
             var port = config["AgileConfig:serviceRegister:port"];
+            var alarmUrl = config["AgileConfig:serviceRegister:alarmUrl"];
             var checkUrl = config["AgileConfig:serviceRegister:heartbeat:url"];
             var mode = config["AgileConfig:serviceRegister:heartbeat:mode"];
             var heartbeatInverval = config["AgileConfig:serviceRegister:heartbeat:interval"];
-
             var metaData = new List<string>();
             config.GetSection("AgileConfig:serviceRegister:metaData").Bind(metaData);
-
             options.RegisterInfo.ServiceId = serviceId;
             options.RegisterInfo.ServiceName = serviceName;
             options.RegisterInfo.Ip = ip;
             options.RegisterInfo.CheckUrl = checkUrl;
+            options.RegisterInfo.AlarmUrl = alarmUrl;
             if (string.IsNullOrWhiteSpace(mode))
             {
                 mode = "client";

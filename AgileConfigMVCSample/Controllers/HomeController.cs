@@ -141,5 +141,12 @@ namespace AgileConfigMVCSample.Controllers
 
             return View("Services");
         }
+
+        public IActionResult ServiceDown([FromBody] ServiceDownAlarmMessageVM message)
+        {
+            Console.WriteLine(message.Message);
+
+            return Json(message);
+        }
     }
 }
