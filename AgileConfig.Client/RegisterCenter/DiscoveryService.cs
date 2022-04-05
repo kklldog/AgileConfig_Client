@@ -99,19 +99,19 @@ namespace AgileConfig.Client.RegisterCenter
             }
         }
 
-        public List<ServiceInfo> OnlineServices
+        public List<ServiceInfo> HealthyServices
         {
             get
             {
-                return _services.Where(x => x.Status == ServiceStatus.Online).ToList();
+                return _services.Where(x => x.Status == ServiceStatus.Healthy).ToList();
             }
         }
 
-        public List<ServiceInfo> OfflineServices
+        public List<ServiceInfo> UnHealthyServices
         {
             get
             {
-                return _services.Where(x => x.Status == ServiceStatus.Offline).ToList();
+                return _services.Where(x => x.Status == ServiceStatus.Unhealthy).ToList();
             }
         }
 

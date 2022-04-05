@@ -4,8 +4,8 @@ namespace AgileConfig.Client.RegisterCenter
 {
     public enum ServiceStatus
     {
-        Offline = 0,
-        Online = 1
+        Unhealthy = 0,
+        Healthy = 1
     }
 
     public class ServiceInfo
