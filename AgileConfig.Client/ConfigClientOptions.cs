@@ -25,6 +25,11 @@ namespace AgileConfig.Client
         public int HttpTimeout { get; set; } = 100;
 
         public string CacheDirectory { get; set; }
+        /// <summary>
+        /// 缓存加密
+        /// </summary>
+        /// <value></value>
+        public bool ConfigCacheEncrypt { get; set; } = false;
 
         public ServiceRegisterInfo RegisterInfo { get; set; }
 
@@ -117,7 +122,7 @@ namespace AgileConfig.Client
             var env = config["AgileConfig:env"];
             var timeout = config["AgileConfig:httpTimeout"];
             var cacheDir = config["AgileConfig:cache:directory"] ?? "";
-
+            var cacheEncrypt = config.GetValue("AgileConfig:cache:config_encrypt", false);
             options.Name = name;
             options.Tag = tag;
             options.AppId = appId;
@@ -125,6 +130,7 @@ namespace AgileConfig.Client
             options.Nodes = serverNodes;
             options.ENV = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
             options.CacheDirectory = cacheDir;
+            options.ConfigCacheEncrypt = cacheEncrypt;
             if (int.TryParse(timeout, out int iTimeout))
             {
                 options.HttpTimeout = iTimeout;
@@ -171,7 +177,7 @@ namespace AgileConfig.Client
             }
             options.RegisterInfo.HeartBeatMode = mode;
             options.RegisterInfo.MetaData = metaData;
-            if (int.TryParse(port,out int iport))
+            if (int.TryParse(port, out int iport))
             {
                 options.RegisterInfo.Port = iport;
             }

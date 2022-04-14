@@ -36,7 +36,7 @@ namespace AgileConfig.Client
         private List<ConfigItem> _configs = new List<ConfigItem>();
         private ILogger _consoleLogger;
         private string LocalCacheFileName => Path.Combine(_options.CacheDirectory, $"{_options.AppId}.agileconfig.client.configs.cache");
-        
+
         /// <summary>
         /// client的实例对象，每次new的时候构造函数会吧this直接赋值给Instance，
         /// 一般来说你可以直接使用这个属性来拿到client对象，但是如果你手动new多个client的话，这个Instance代表最后new的那一个client。
@@ -761,6 +761,10 @@ namespace AgileConfig.Client
                     return;
                 }
                 EnsureCacheDir();
+                if (Options.ConfigCacheEncrypt)
+                {
+                    configContent = Encrypt.AesEncryptECB(Options.Secret, configContent);
+                }
                 File.WriteAllText(LocalCacheFileName, configContent);
             }
             catch (Exception ex)
@@ -777,7 +781,12 @@ namespace AgileConfig.Client
                 return "";
             }
 
-            return File.ReadAllText(LocalCacheFileName);
+            var configContent = File.ReadAllText(LocalCacheFileName);
+            if (Options.ConfigCacheEncrypt)
+            {
+                configContent = Encrypt.AesDecryptECB(Options.Secret, configContent);
+            }
+            return configContent;
         }
 
         public string DataMd5Version()
