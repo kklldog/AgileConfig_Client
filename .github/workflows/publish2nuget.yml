@@ -1,14 +1,9 @@
 name: push to nuget
 
 on:
-  
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
+    branches: [ publish ]
 jobs:
-  
   build:
     runs-on: ubuntu-latest
     defaults:
