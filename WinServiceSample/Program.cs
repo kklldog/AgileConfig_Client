@@ -1,12 +1,12 @@
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AgileConfig.Client;
+using Microsoft.AspNetCore.Hosting;
 
-namespace AgileConfigMVCSampleNET5
+namespace WinServiceSample
 {
     public class Program
     {
@@ -17,14 +17,14 @@ namespace AgileConfigMVCSampleNET5
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .UseAgileConfig((ConfigClientOptions op) =>
+             .UseAgileConfig()
+             .UseWindowsService(options =>
+             {
+                 options.ServiceName = "AglieConfigClientService";
+             })
+                .ConfigureServices((hostContext, services) =>
                 {
-                    op.Name = "xxx";
-                    op.Tag = "NET5";
-                })
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
+                    services.AddHostedService<Worker>();
                 });
     }
 }

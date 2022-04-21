@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using AgileConfig.Client;
+using AgileConfig.Client.RegisterCenter;
+using System.Threading;
 
 namespace AgileConfigClientTest
 {
@@ -11,18 +13,16 @@ namespace AgileConfigClientTest
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
+            var serviceCollection = new ServiceCollection();
+            ConfigureServices(serviceCollection);
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var client = new ConfigClient();
+            var lf = serviceProvider.GetService<ILoggerFactory>();
 
             Task.Run(async () =>
             {
-                var serviceCollection = new ServiceCollection();
-                ConfigureServices(serviceCollection);
-                var serviceProvider = serviceCollection.BuildServiceProvider();
-
-                var lf = serviceProvider.GetService<ILoggerFactory>();
-
                 try
                 {
-                    var client = new ConfigClient();
                     client.Logger = lf.CreateLogger<ConfigClient>();
                     client.ConfigChanged += Client_ConfigChanged;
                     await client.ConnectAsync();
@@ -39,7 +39,6 @@ namespace AgileConfigClientTest
                         }
                     });
 
-                    Console.WriteLine("Test started .");
                 }
                 catch (Exception ex)
                 {
@@ -47,6 +46,21 @@ namespace AgileConfigClientTest
                 }
             });
 
+            // regiseter center / service discovery
+            Task.Run(async ()=> {
+                try
+                {
+                    var regService = new RegisterService(client, lf);
+                    var disService = new DiscoveryService(client, lf);
+                    var service = new RegisterHostedService(regService, disService, lf);
+
+                    await service.StartAsync(CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            });
 
             Console.ReadLine();
         }

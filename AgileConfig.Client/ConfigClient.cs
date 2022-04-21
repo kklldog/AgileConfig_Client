@@ -1,4 +1,5 @@
-﻿using AgileConfig.Protocol;
+﻿using AgileConfig.Client.MessageHandlers;
+using AgileConfig.Protocol;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -23,24 +24,32 @@ namespace AgileConfig.Client
 
     public class ConfigClient : IConfigClient
     {
+        private ConfigClientOptions _options;
         private int _WebsocketReconnectInterval = 5;
         private int _WebsocketHeartbeatInterval = 30;
-        private string _ServerNodes;
-        private string _AppId;
-        private string _Secret;
         private bool _isAutoReConnecting = false;
         private bool _isWsHeartbeating = false;
-        private string _Env;
-        private string _CacheDire;
         private ClientWebSocket _WebsocketClient;
         private bool _adminSayOffline = false;
         private bool _isLoadFromLocal = false;
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
-        private ILogger _logger;
         private ILogger _consoleLogger;
-        private string LocalCacheFileName => Path.Combine(_CacheDire, $"{_AppId}.agileconfig.client.configs.cache");
-        public static IConfigClient Instance = null;
+        private string LocalCacheFileName => Path.Combine(_options.CacheDirectory, $"{_options.AppId}.agileconfig.client.configs.cache");
+
+        /// <summary>
+        /// client的实例对象，每次new的时候构造函数会吧this直接赋值给Instance，
+        /// 一般来说你可以直接使用这个属性来拿到client对象，但是如果你手动new多个client的话，这个Instance代表最后new的那一个client。
+        /// </summary>
+        public static IConfigClient Instance { get; private set; }
+
+        public ClientWebSocket WebSocket
+        {
+            get
+            {
+                return _WebsocketClient;
+            }
+        }
 
         private ILogger ConsoleLogger
         {
@@ -63,20 +72,30 @@ namespace AgileConfig.Client
                 }
             }
         }
-        public ILogger Logger { 
-            get 
+
+        public ConfigClientOptions Options
+        {
+            get
             {
-                if (_logger == null)
+                return _options;
+            }
+        }
+
+        public ILogger Logger
+        {
+            get
+            {
+                if (_options.Logger == null)
                 {
                     // 给一个默认的 console logger
                     return ConsoleLogger;
                 }
 
-                return _logger;
+                return _options.Logger;
             }
             set
             {
-                this._logger = value;
+                _options.Logger = value;
             }
         }
         public ConnectStatus Status { get; private set; }
@@ -85,40 +104,52 @@ namespace AgileConfig.Client
         {
             get
             {
-                return _ServerNodes;
+                return _options.Nodes;
             }
         }
         public string AppId
         {
             get
             {
-                return _AppId;
+                return _options.AppId;
             }
         }
         public string Secret
         {
             get
             {
-                return _Secret;
+                return _options.Secret;
             }
         }
         public string Env
         {
             get
             {
-                return _Env;
+                return _options.ENV;
             }
         }
 
         public string Name
         {
-            get;
-            set;
+            get
+            {
+                return _options.Name;
+            }
+            set
+            {
+                _options.Name = value;
+            }
         }
         public string Tag
         {
-            get;
-            set;
+            get
+            {
+                return _options.Tag;
+            }
+            set
+            {
+                _options.Tag = value;
+            }
         }
 
         /// <summary>
@@ -126,9 +157,15 @@ namespace AgileConfig.Client
         /// </summary>
         public int HttpTimeout
         {
-            get;
-            set;
-        } = 100;
+            get
+            {
+                return _options.HttpTimeout;
+            }
+            set
+            {
+                _options.HttpTimeout = value;
+            }
+        }
 
         /// <summary>
         /// 是否读取的事本地缓存的配置
@@ -143,7 +180,17 @@ namespace AgileConfig.Client
         /// <summary>
         /// 配置项修改事件
         /// </summary>
-        public event Action<ConfigChangedArg> ConfigChanged;
+        public event Action<ConfigChangedArg> ConfigChanged
+        {
+            add
+            {
+                _options.ConfigChanged += value;
+            }
+            remove
+            {
+                _options.ConfigChanged -= value;
+            }
+        }
         /// <summary>
         /// 所有的配置项最后都会转换为字典
         /// </summary>
@@ -168,62 +215,59 @@ namespace AgileConfig.Client
             Data.TryGetValue(key, out string val);
             return val;
         }
+
+        private void SetOptions(ConfigClientOptions options)
+        {
+            var appId = options.AppId;
+            if (string.IsNullOrEmpty(appId))
+            {
+                throw new ArgumentNullException(nameof(appId));
+            }
+            if (string.IsNullOrEmpty(options.Nodes))
+            {
+                throw new ArgumentNullException(nameof(options.Nodes));
+            }
+
+            options.ENV = string.IsNullOrEmpty(options.ENV) ? "" : options.ENV.ToUpper();
+            options.CacheDirectory = options.CacheDirectory ?? "";
+
+            this._options = options;
+        }
+
+        /// <summary>
+        /// 保证cache文件夹存在
+        /// </summary>
+        private void EnsureCacheDir()
+        {
+            if (!string.IsNullOrWhiteSpace(_options.CacheDirectory) && !Directory.Exists(_options.CacheDirectory))
+            {
+                Directory.CreateDirectory(_options.CacheDirectory);
+            }
+        }
+
+        public ConfigClient(ConfigClientOptions options)
+        {
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
+            this.SetOptions(options);
+            Instance = this;
+        }
+
         public ConfigClient(string json = "appsettings.json")
         {
             if (string.IsNullOrWhiteSpace(json))
                 throw new ArgumentNullException(nameof(json));
 
-            //读取本地配置
-            var localconfig = new ConfigurationBuilder()
-                             .SetBasePath(Directory.GetCurrentDirectory())
-                             .AddJsonFile(json).AddEnvironmentVariables().Build();
-            //从本地配置里读取AgileConfig的相关信息
-            var configSection = localconfig.GetSection("AgileConfig");
-            if (!configSection.Exists())
-            {
-                throw new Exception($"Can not find section:AgileConfig from {json}");
-            }
-            var appId = localconfig["AgileConfig:appId"];
-            var secret = localconfig["AgileConfig:secret"];
-            var serverNodes = localconfig["AgileConfig:nodes"];
-            var name = localconfig["AgileConfig:name"];
-            var tag = localconfig["AgileConfig:tag"];
-            var env = localconfig["AgileConfig:env"];
-            var timeout = localconfig["AgileConfig:httpTimeout"];
-
-            if (string.IsNullOrEmpty(appId))
-            {
-                throw new ArgumentNullException(nameof(appId));
-            }
-            if (string.IsNullOrEmpty(serverNodes))
-            {
-                throw new ArgumentNullException(nameof(serverNodes));
-            }
-            this.Name = name;
-            this.Tag = tag;
-            this._AppId = appId;
-            this._Secret = secret;
-            this._ServerNodes = serverNodes;
-            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
-            _CacheDire = localconfig["AgileConfig:cache:directory"] ?? "";
-            if (!string.IsNullOrWhiteSpace(_CacheDire) && !Directory.Exists(_CacheDire))
-            {
-                Directory.CreateDirectory(_CacheDire);
-            }
-            if (string.IsNullOrEmpty(timeout))
-            {
-                return;
-            }
-            if (int.TryParse(timeout, out int iTimeout))
-            {
-                this.HttpTimeout = iTimeout;
-            }
+            var options = ConfigClientOptions.FromLocalAppsettings(json);
+            this.SetOptions(options);
+            Instance = this;
         }
 
         public ConfigClient(IConfiguration configuration, ILogger logger = null)
         {
-            this.Logger = logger;
-
             var children = configuration.GetSection("AgileConfig").GetChildren();
 
             if (children == null || !children.Any())
@@ -233,51 +277,17 @@ namespace AgileConfig.Client
 
             if (children == null || !children.Any())
             {
-                throw new ArgumentNullException(nameof(configuration));
+                throw new Exception($"Can not find section:AgileConfig from IConfiguration instance .");
             }
 
-            var appId = children.FirstOrDefault(x => string.Equals(x.Key, "appid", StringComparison.OrdinalIgnoreCase))?.Value;
-            var secret = children.FirstOrDefault(x => string.Equals(x.Key, "secret", StringComparison.OrdinalIgnoreCase))?.Value;
-            var serverNodes = children.FirstOrDefault(x => string.Equals(x.Key, "nodes", StringComparison.OrdinalIgnoreCase))?.Value;
-            var name = children.FirstOrDefault(x => string.Equals(x.Key, "name", StringComparison.OrdinalIgnoreCase))?.Value;
-            var tag = children.FirstOrDefault(x => string.Equals(x.Key, "tag", StringComparison.OrdinalIgnoreCase))?.Value;
-            var env = children.FirstOrDefault(x => string.Equals(x.Key, "env", StringComparison.OrdinalIgnoreCase))?.Value;
-            var timeout = children.FirstOrDefault(x => string.Equals(x.Key, "httpTimeout", StringComparison.OrdinalIgnoreCase))?.Value;
-
-            if (string.IsNullOrEmpty(appId))
-            {
-                throw new ArgumentNullException(nameof(appId));
-            }
-
-            if (string.IsNullOrEmpty(serverNodes))
-            {
-                throw new ArgumentNullException(nameof(serverNodes));
-            }
-
-            this.Name = name;
-            this.Tag = tag;
-            this._AppId = appId;
-            this._Secret = secret;
-            this._ServerNodes = serverNodes;
-            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
-            _CacheDire = children.FirstOrDefault(x => string.Equals(x.Key, "AgileConfig:cache:directory", StringComparison.OrdinalIgnoreCase))?.Value ?? "";
-            if (!string.IsNullOrWhiteSpace(_CacheDire) && !Directory.Exists(_CacheDire))
-            {
-                Directory.CreateDirectory(_CacheDire);
-            }
-            if (string.IsNullOrEmpty(timeout))
-            {
-                return;
-            }
-            if (int.TryParse(timeout, out int iTimeout))
-            {
-                this.HttpTimeout = iTimeout;
-            }
+            var options = ConfigClientOptions.FromConfiguration(configuration);
+            options.Logger = logger;
+            this.SetOptions(options);
+            Instance = this;
         }
 
         public ConfigClient(string appId, string secret, string serverNodes, string env, ILogger logger = null)
         {
-            this.Logger = logger;
             if (string.IsNullOrEmpty(appId))
             {
                 throw new ArgumentNullException(nameof(appId));
@@ -286,10 +296,15 @@ namespace AgileConfig.Client
             {
                 throw new ArgumentNullException(nameof(serverNodes));
             }
-            this._AppId = appId;
-            this._Secret = secret;
-            this._ServerNodes = serverNodes;
-            this._Env = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
+
+            var options = new ConfigClientOptions();
+            options.AppId = appId;
+            options.Secret = secret;
+            options.Nodes = serverNodes;
+            options.ENV = env;
+            options.Logger = logger;
+            this.SetOptions(options);
+            Instance = this;
         }
 
         /// <summary>
@@ -334,7 +349,7 @@ namespace AgileConfig.Client
             }
 
             var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
-            Load();//不管websocket是否成功，都去拉一次配置
+            await Load();//不管websocket是否成功，都去拉一次配置
             if (connected)
             {
                 HandleWebsocketMessageAsync();
@@ -352,11 +367,12 @@ namespace AgileConfig.Client
             var clientName = string.IsNullOrEmpty(Name) ? "" : System.Web.HttpUtility.UrlEncode(Name);
             var tag = string.IsNullOrEmpty(Tag) ? "" : System.Web.HttpUtility.UrlEncode(Tag);
 
-            client.Options.SetRequestHeader("appid", _AppId);
-            client.Options.SetRequestHeader("env", _Env);
-            client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(_AppId, _Secret));
+            client.Options.SetRequestHeader("appid", AppId);
+            client.Options.SetRequestHeader("env", Env);
+            client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(AppId, Secret));
+            client.Options.SetRequestHeader("client-v", AssemablyUtil.GetVer());
 
-            var randomServer = new RandomServers(_ServerNodes);
+            var randomServer = new RandomServers(ServerNodes);
             int failCount = 0;
             while (!randomServer.IsComplete)
             {
@@ -464,7 +480,7 @@ namespace AgileConfig.Client
                         var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
                         if (connected)
                         {
-                            Load();
+                            await Load();
                             HandleWebsocketMessageAsync();
                             WebsocketHeartbeatAsync();
                         }
@@ -553,8 +569,47 @@ namespace AgileConfig.Client
             }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
 
+        public async Task TryHandleAction(ActionMessage action)
+        {
+            try
+            {
+                if (action != null)
+                {
+                    switch (action.Action)
+                    {
+                        case ActionConst.Offline:
+                            _adminSayOffline = true;
+                            await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
+                            this.Status = ConnectStatus.Disconnected;
+                            Logger?.LogTrace("client offline because admin console send a command 'offline' ,");
+                            NoticeChangedAsync(ActionConst.Offline);
+                            break;
+                        case ActionConst.Reload:
+                            if (await Load())
+                            {
+                                NoticeChangedAsync(ActionConst.Reload);
+                            };
+                            break;
+                        case ActionConst.Ping:
+                            var localVersion = this.DataMd5Version();
+                            if (action.Data != localVersion)
+                            {
+                                await Load();
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "cannot handle websocket action , {0}", $"Module: {action.Module} Action: {action.Action} Data: {action.Data}");
+            }
+        }
+
         /// <summary>
-        /// 最终处理服务端推送的消息
+        /// 分发到消息到处理类
         /// </summary>
         private async void ProcessMessage(WebSocketReceiveResult result, ArraySegment<Byte> buffer)
         {
@@ -568,56 +623,32 @@ namespace AgileConfig.Client
                     {
                         var msg = await reader.ReadToEndAsync().ConfigureAwait(false);
                         Logger?.LogTrace("client receive message ' {0} ' from server .", msg);
-                        if (string.IsNullOrEmpty(msg) || msg == "0")
+                        if (DropMessageHandler.Hit(msg))
                         {
                             return;
                         }
-                        if (msg.StartsWith("V:"))
+                        #region old message handlers
+                        if (OldConfigPingRetrunMessageHandler.Hit(msg))
                         {
-                            var version = msg.Substring(2, msg.Length - 2);
-                            var localVersion = this.DataMd5Version();
-                            if (version != localVersion)
-                            {
-                                //如果数据库版本跟本地版本不一致则直接全部更新
-                                Load();
-                            }
+                            await OldConfigPingRetrunMessageHandler.Handle(msg, this);
                             return;
                         }
-                        try
+                        if (OldConfigActionMessageHandler.Hit(msg))
                         {
-                            var action = JsonConvert.DeserializeObject<WebsocketAction>(msg);
-                            if (action != null)
-                            {
-                                var dict = Data as ConcurrentDictionary<string, string>;
-                                var itemKey = "";
-                                if (action.Item != null)
-                                {
-                                    itemKey = GenerateKey(action.Item);
-                                }
-                                switch (action.Action)
-                                {
-                                    case ActionConst.Offline:
-                                        _adminSayOffline = true;
-                                        await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
-                                        this.Status = ConnectStatus.Disconnected;
-                                        Logger?.LogTrace("client offline because admin console send a command 'offline' ,");
-                                        NoticeChangedAsync(ActionConst.Offline);
-                                        break;
-                                    case ActionConst.Reload:
-                                        if (Load())
-                                        {
-                                            NoticeChangedAsync(ActionConst.Reload);
-                                        };
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
+                            await OldConfigActionMessageHandler.Handle(msg, this);
+                            return;
                         }
-                        catch (Exception ex)
+                        #endregion
+
+                        if (ConfigCenterActionMessageHandler.Hit(msg))
                         {
-                            Logger?.LogError(ex, "cannot handle websocket message {0}", msg);
+                            await ConfigCenterActionMessageHandler.Handle(msg, this);
+                            return;
                         }
+
+                        MessageCenter.Receive(msg);
+                        return;
+
                     }
                 }
             }
@@ -625,13 +656,13 @@ namespace AgileConfig.Client
 
         private void NoticeChangedAsync(string action, string key = "")
         {
-            if (ConfigChanged == null)
+            if (_options.ConfigChanged == null)
             {
                 return;
             }
             Task.Run(() =>
             {
-                ConfigChanged(new ConfigChangedArg(action, key));
+                _options.ConfigChanged(new ConfigChangedArg(action, key));
             });
         }
 
@@ -650,10 +681,10 @@ namespace AgileConfig.Client
         /// <summary>
         /// 通过http从server拉取所有配置到本地
         /// </summary>
-        public bool Load()
+        public async Task<bool> Load()
         {
             int failCount = 0;
-            var randomServer = new RandomServers(_ServerNodes);
+            var randomServer = new RandomServers(ServerNodes);
             while (!randomServer.IsComplete)
             {
                 var server = randomServer.Next();
@@ -661,16 +692,16 @@ namespace AgileConfig.Client
                 {
                     var headers = new Dictionary<string, string>()
                     {
-                       {"appid", _AppId },
-                       {"Authorization", GenerateBasicAuthorization(_AppId, _Secret) }
+                       {"appid", AppId },
+                       {"Authorization", GenerateBasicAuthorization(AppId, Secret) }
                     };
-                    var apiUrl = server + (server.EndsWith("/") ? "" : "/") + $"api/config/app/{_AppId}?env={_Env}";
+                    var apiUrl = server + (server.EndsWith("/") ? "" : "/") + $"api/config/app/{AppId}?env={Env}";
                     var timeout = (HttpTimeout <= 0 ? 30 : HttpTimeout) * 1000;
                     using (var result = HttpUtil.Get(apiUrl, headers, timeout))
                     {
                         if (result.StatusCode == System.Net.HttpStatusCode.OK)
                         {
-                            var respContent = HttpUtil.GetResponseContent(result);
+                            var respContent = await HttpUtil.GetResponseContentAsync(result);
                             ReloadDataDictFromContent(respContent);
                             WriteConfigsToLocal(respContent);
                             _isLoadFromLocal = false;
@@ -729,7 +760,11 @@ namespace AgileConfig.Client
                 {
                     return;
                 }
-
+                EnsureCacheDir();
+                if (Options.ConfigCacheEncrypt)
+                {
+                    configContent = Encrypt.AesEncryptECB(Options.Secret, configContent);
+                }
                 File.WriteAllText(LocalCacheFileName, configContent);
             }
             catch (Exception ex)
@@ -740,34 +775,29 @@ namespace AgileConfig.Client
 
         private string ReadConfigsFromLocal()
         {
+            EnsureCacheDir();
             if (!File.Exists(LocalCacheFileName))
             {
                 return "";
             }
 
-            return File.ReadAllText(LocalCacheFileName);
+            var configContent = File.ReadAllText(LocalCacheFileName);
+            if (Options.ConfigCacheEncrypt)
+            {
+                configContent = Encrypt.AesDecryptECB(Options.Secret, configContent);
+            }
+            return configContent;
         }
 
-        private string DataMd5Version()
+        public string DataMd5Version()
         {
             var keyStr = string.Join("&", Data.Keys.ToArray().OrderBy(k => k));
             var valueStr = string.Join("&", Data.Values.ToArray().OrderBy(v => v));
             var txt = $"{keyStr}&{valueStr}";
 
-            using (var md5 = MD5.Create())
-            {
-                var inputBytes = Encoding.ASCII.GetBytes(txt);
-                var hashBytes = md5.ComputeHash(inputBytes);
+            var md5 = Encrypt.Md5(txt);
 
-                // Convert the byte array to hexadecimal string
-                var sb = new StringBuilder();
-                for (var i = 0; i < hashBytes.Length; i++)
-                {
-                    sb.Append(hashBytes[i].ToString("X2"));
-                }
-
-                return sb.ToString();
-            }
+            return md5;
         }
     }
 }

@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using AgileConfigMVCSample.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using AgileConfig.Client.RegisterCenter;
+using Newtonsoft.Json;
 
 namespace AgileConfigMVCSample.Controllers
 {
@@ -20,6 +22,7 @@ namespace AgileConfigMVCSample.Controllers
         private readonly IOptions<DbConfigOptions> _dbOptions;
         private readonly IOptionsSnapshot<DbConfigOptions> _dbOptionsSnapshot;
         private readonly IOptionsMonitor<DbConfigOptions> _dbOptionsMonitor;
+        private readonly IDiscoveryService _discoveryService;
 
         public HomeController(
             ILogger<HomeController> logger, 
@@ -27,7 +30,8 @@ namespace AgileConfigMVCSample.Controllers
             IOptions<DbConfigOptions> dbOptions, 
             IOptionsSnapshot<DbConfigOptions> dbOptionsSnapshot,
             IOptionsMonitor<DbConfigOptions> dbOptionsMonitor,
-            IConfigClient configClient)
+            IConfigClient configClient,
+            IDiscoveryService discoveryService)
         {
             _logger = logger;
             _IConfigClient = configClient;
@@ -40,6 +44,8 @@ namespace AgileConfigMVCSample.Controllers
                 Console.WriteLine(o.connection);
                 Console.WriteLine(s);
             });
+
+            _discoveryService = discoveryService;
         }
 
         public IActionResult Index()
@@ -114,6 +120,33 @@ namespace AgileConfigMVCSample.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        public IActionResult Health()
+        {
+            return Content("ok");
+        }
+
+        public IActionResult Services(string serviceName)
+        {
+            var services = _discoveryService.Services;
+
+            if (serviceName != null)
+            {
+                services = _discoveryService.GetByServiceName(serviceName).ToList();
+            }
+
+            var json = JsonConvert.SerializeObject(services);
+            ViewBag.services = json;
+
+            return View("Services");
+        }
+
+        public IActionResult ServiceDown([FromBody] ServiceDownAlarmMessageVM message)
+        {
+            Console.WriteLine(message.Message);
+
+            return Json(message);
         }
     }
 }
