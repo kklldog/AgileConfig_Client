@@ -47,5 +47,6 @@ namespace AgileConfig.Client
 
         ClientWebSocket WebSocket { get;  }
 
+        string GenerateBasicAuthorization(string appId, string secret);
     }
 }

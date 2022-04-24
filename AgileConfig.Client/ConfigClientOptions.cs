@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace AgileConfig.Client
 {
@@ -30,6 +31,20 @@ namespace AgileConfig.Client
         /// </summary>
         /// <value></value>
         public bool ConfigCacheEncrypt { get; set; } = false;
+        /// <summary>
+        /// 检查是否连接打开状态，如果不是则尝试重连，循环休眠时间，秒，
+        /// 如果小于0则不重连
+        /// </summary>
+        public int WebsocketReconnectInterval { get; set; } = 10;
+        /// <summary>
+        /// 心跳间隔时间，秒，
+        /// 如果小于0则不心跳
+        /// </summary>
+        public int WebsocketHeartbeatInterval { get; set; } = 30;
+        /// <summary>
+        /// 取消标识
+        /// </summary>
+        public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
 
         public ServiceRegisterInfo RegisterInfo { get; set; }
 
@@ -123,6 +138,8 @@ namespace AgileConfig.Client
             var timeout = config["AgileConfig:httpTimeout"];
             var cacheDir = config["AgileConfig:cache:directory"] ?? "";
             var cacheEncrypt = config.GetValue("AgileConfig:cache:config_encrypt", false);
+            var websocketReconnectInterval = config["AgileConfig:websocketReconnectInterval"];
+            var websocketHeartbeatInterval = config["AgileConfig:websocketHeartbeatInterval"];
             options.Name = name;
             options.Tag = tag;
             options.AppId = appId;
@@ -134,6 +151,14 @@ namespace AgileConfig.Client
             if (int.TryParse(timeout, out int iTimeout))
             {
                 options.HttpTimeout = iTimeout;
+            }
+            if (int.TryParse(websocketReconnectInterval, out int _websocketReconnectInterval))
+            {
+                options.WebsocketReconnectInterval = _websocketReconnectInterval;
+            }
+            if (int.TryParse(websocketHeartbeatInterval, out int _websocketHeartbeatInterval))
+            {
+                options.WebsocketHeartbeatInterval = _websocketHeartbeatInterval;
             }
 
             //read service info

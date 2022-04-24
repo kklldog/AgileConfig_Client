@@ -130,7 +130,12 @@ namespace AgileConfig.Client.RegisterCenter
                 var getUrl = host + (host.EndsWith("/") ? "" : "/") + $"api/registercenter/services";
                 try
                 {
-                    var resp = await HttpUtil.GetAsync(getUrl, null, null);
+                    var headers = new Dictionary<string, string>()
+                    {
+                       {"appid", _options.AppId },
+                       {"Authorization", _configClient.GenerateBasicAuthorization(_options.AppId, _options.Secret) }
+                    };
+                    var resp = await HttpUtil.GetAsync(getUrl, headers, null);
 
                     if (resp.StatusCode == System.Net.HttpStatusCode.OK)
                     {

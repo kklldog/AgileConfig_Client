@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AgileConfig.Client.RegisterCenter.Heartbeats
@@ -14,12 +15,13 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
         IConfigClient _client;
         HeartbeatChannelPicker _picker;
         ILogger _logger;
+        CancellationTokenSource _cancellationTokenSource;
 
         private int Interval
         {
             get
             {
-                if (_client.Options == null || _client.Options.RegisterInfo == null || _client.Options.RegisterInfo.Interval < 1)
+                if (_client.Options == null || _client.Options.RegisterInfo == null || _client.Options.RegisterInfo.Interval < 5)
                 {
                     return 30;
                 }
@@ -37,9 +39,10 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
 
         public void Start(Func<string> getId)
         {
+            _cancellationTokenSource = new CancellationTokenSource();
             Task.Factory.StartNew(async () =>
             {
-                while (true)
+                while (!_cancellationTokenSource.Token.IsCancellationRequested)
                 {
                     var uniqueId = getId();
                     if (!string.IsNullOrEmpty(uniqueId))
@@ -51,6 +54,14 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
                     await Task.Delay(1000 * Interval);
                 }
             }, TaskCreationOptions.LongRunning);
+        }
+
+        public void Stop()
+        {
+            if (_cancellationTokenSource != null)
+            {
+                _cancellationTokenSource.Cancel();
+            }
         }
     }
 }

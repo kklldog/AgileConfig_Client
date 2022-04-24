@@ -1,6 +1,7 @@
 ﻿using AgileConfig.Client.RegisterCenter.Heartbeats;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -94,7 +95,12 @@ namespace AgileConfig.Client.RegisterCenter
                 var postUrl = host + (host.EndsWith("/") ? "" : "/") + $"api/registercenter/{_uniqueId}";
                 try
                 {
-                    var resp = await HttpUtil.DeleteAsync(postUrl, null, data, null, "application/json");
+                    var headers = new Dictionary<string, string>()
+                    {
+                       {"appid", _options.AppId },
+                       {"Authorization", _configClient.GenerateBasicAuthorization(_options.AppId, _options.Secret) }
+                    };
+                    var resp = await HttpUtil.DeleteAsync(postUrl, headers, data, null, "application/json");
                     var content = await HttpUtil.GetResponseContentAsync(resp);
                     _logger.LogInformation($"UNREGISTER service info from server:{host} then server response result:{content} status:{resp.StatusCode}");
 
@@ -140,7 +146,12 @@ namespace AgileConfig.Client.RegisterCenter
                             var postUrl = host + (host.EndsWith("/") ? "" : "/") + $"api/registercenter";
                             try
                             {
-                                var resp = await HttpUtil.PostAsync(postUrl, null, data, null, "application/json");
+                                var headers = new Dictionary<string, string>()
+                                {
+                                   {"appid", _options.AppId },
+                                   {"Authorization", _configClient.GenerateBasicAuthorization(_options.AppId, _options.Secret) }
+                                };
+                                var resp = await HttpUtil.PostAsync(postUrl, headers, data, null, "application/json");
                                 var content = await HttpUtil.GetResponseContentAsync(resp);
                                 _logger.LogInformation($"REGISTER service info to server:{host} then server response result:{content} status:{resp.StatusCode}");
 

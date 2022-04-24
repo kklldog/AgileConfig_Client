@@ -48,6 +48,7 @@ namespace AgileConfig.Client.RegisterCenter
             logger.LogInformation("try to unregister serviceinfo to server .");
 
             await _registerService.UnRegisterAsync();
+            _heartbeatService.Stop();
         }
 
         class HeartbeatResult

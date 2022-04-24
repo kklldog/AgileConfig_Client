@@ -25,8 +25,8 @@ namespace AgileConfig.Client
     public class ConfigClient : IConfigClient
     {
         private ConfigClientOptions _options;
-        private int _WebsocketReconnectInterval = 5;
-        private int _WebsocketHeartbeatInterval = 30;
+        //private int _WebsocketReconnectInterval = 5;
+        //private int _WebsocketHeartbeatInterval = 30;
         private bool _isAutoReConnecting = false;
         private bool _isWsHeartbeating = false;
         private ClientWebSocket _WebsocketClient;
@@ -168,7 +168,52 @@ namespace AgileConfig.Client
         }
 
         /// <summary>
-        /// 是否读取的事本地缓存的配置
+        /// 尝试重新连接间隔，秒，如果小于0则不重连
+        /// </summary>
+        public int WebsocketReconnectInterval
+        {
+            get
+            {
+                return _options.WebsocketReconnectInterval;
+            }
+            set
+            {
+                _options.WebsocketReconnectInterval = value;
+            }
+        }
+
+        /// <summary>
+        /// 心跳间隔时间，秒，如果小于0则不心跳
+        /// </summary>
+        public int WebsocketHeartbeatInterval
+        {
+            get
+            {
+                return _options.WebsocketHeartbeatInterval;
+            }
+            set
+            {
+                _options.WebsocketHeartbeatInterval = value;
+            }
+        }
+
+        /// <summary>
+        /// 取消标识
+        /// </summary>
+        public CancellationToken ReconnectCancellationToken
+        {
+            get
+            {
+                return _options.CancellationToken;
+            }
+            set
+            {
+                _options.CancellationToken = value;
+            }
+        }
+
+        /// <summary>
+        /// 是否读取的是本地缓存的配置
         /// </summary>
         public bool IsLoadFromLocal
         {
@@ -177,6 +222,7 @@ namespace AgileConfig.Client
                 return _isLoadFromLocal;
             }
         }
+
         /// <summary>
         /// 配置项修改事件
         /// </summary>
@@ -191,6 +237,7 @@ namespace AgileConfig.Client
                 _options.ConfigChanged -= value;
             }
         }
+
         /// <summary>
         /// 所有的配置项最后都会转换为字典
         /// </summary>
@@ -449,7 +496,7 @@ namespace AgileConfig.Client
         /// <returns></returns>
         private void AutoReConnect()
         {
-            if (_isAutoReConnecting)
+            if (_isAutoReConnecting || this.WebsocketReconnectInterval <= 0)
             {
                 return;
             }
@@ -457,9 +504,9 @@ namespace AgileConfig.Client
 
             Task.Factory.StartNew(async () =>
             {
-                while (true)
+                while (this.ReconnectCancellationToken == CancellationToken.None || !this.ReconnectCancellationToken.IsCancellationRequested)
                 {
-                    await Task.Delay(1000 * _WebsocketReconnectInterval).ConfigureAwait(false);
+                    await Task.Delay(1000 * this.WebsocketReconnectInterval).ConfigureAwait(false);
 
                     if (_WebsocketClient?.State == WebSocketState.Open)
                     {
@@ -493,7 +540,7 @@ namespace AgileConfig.Client
             }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
 
-        private string GenerateBasicAuthorization(string appId, string secret)
+        public string GenerateBasicAuthorization(string appId, string secret)
         {
             var txt = $"{appId}:{secret}";
             var data = Encoding.UTF8.GetBytes(txt);
@@ -505,7 +552,7 @@ namespace AgileConfig.Client
         /// <returns></returns>
         public void WebsocketHeartbeatAsync()
         {
-            if (_isWsHeartbeating)
+            if (_isWsHeartbeating || this.WebsocketHeartbeatInterval <= 0)
             {
                 return;
             }
@@ -514,9 +561,9 @@ namespace AgileConfig.Client
             Task.Factory.StartNew(async () =>
             {
                 var data = Encoding.UTF8.GetBytes("ping");
-                while (true)
+                while (this.ReconnectCancellationToken == CancellationToken.None || !this.ReconnectCancellationToken.IsCancellationRequested)
                 {
-                    await Task.Delay(1000 * _WebsocketHeartbeatInterval).ConfigureAwait(false); ;
+                    await Task.Delay(1000 * this.WebsocketHeartbeatInterval).ConfigureAwait(false);
                     if (_adminSayOffline)
                     {
                         break;

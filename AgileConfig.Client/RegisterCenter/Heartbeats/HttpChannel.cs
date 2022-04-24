@@ -9,12 +9,14 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
 {
     class HttpChannel : IChannel
     {
+        private IConfigClient _configClient;
         private ConfigClientOptions _options;
         private ILogger _logger;
 
-        public HttpChannel(ConfigClientOptions options, ILogger logger)
+        public HttpChannel(IConfigClient client, ILogger logger)
         {
-            _options = options;
+            _configClient = client;
+            _options = client.Options;
             _logger = logger;
         }
         public async Task SendAsync(string serviceUniqueId)
@@ -28,11 +30,16 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
             var data = Encoding.UTF8.GetBytes(json);
             while (!random.IsComplete)
             {   //随机一个节点尝试移除
-                var host = random.Next();
+                var host = random.Next();                
                 var postUrl = host + (host.EndsWith("/") ? "" : "/") + $"api/registercenter/heartbeat";
                 try
                 {
-                    var resp = await HttpUtil.PostAsync(postUrl, null, data, null, "application/json");
+                    var headers = new Dictionary<string, string>()
+                    {
+                        {"appid", _options.AppId },
+                        {"Authorization", _configClient.GenerateBasicAuthorization(_options.AppId, _options.Secret) }
+                    };
+                    var resp = await HttpUtil.PostAsync(postUrl, headers, data, null, "application/json");
 
                     if (resp.StatusCode == System.Net.HttpStatusCode.OK)
                     {

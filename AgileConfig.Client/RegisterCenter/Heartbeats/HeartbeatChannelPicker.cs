@@ -18,7 +18,7 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
             _client = client;
             _loggerFactory = loggerFactory;
             _wsChan = new WebsocketChannel(_client, _loggerFactory.CreateLogger<WebsocketChannel>());
-            _httpChan = new HttpChannel(_client.Options, _loggerFactory.CreateLogger<HttpChannel>());
+            _httpChan = new HttpChannel(_client, _loggerFactory.CreateLogger<HttpChannel>());
         }
 
         public IChannel Pick()
