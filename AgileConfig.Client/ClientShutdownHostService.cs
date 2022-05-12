@@ -20,7 +20,7 @@ namespace AgileConfig.Client
             {
                 await ConfigClient.Instance?.DisconnectAsync();
             }
-            catch(Exception e)
+            catch
             {
             }
         }
