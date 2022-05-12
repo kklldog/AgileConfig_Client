@@ -14,6 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 ConfigClient.Instance.Logger = GetLogger(services);
                 return ConfigClient.Instance;
             });
+            services.AddHostedService<ClientShutdownHostService>();
             if (ConfigClient.Instance.Options.RegisterInfo != null)
             {
                 AddAgileRegisterCenterDiscovery(services);
