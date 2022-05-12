@@ -11,6 +11,7 @@ namespace AgileConfigMVCSampleNET6.Pages
         public IndexModel(ILogger<IndexModel> logger, IConfiguration configuration)
         {
             _logger = logger;
+            logger.LogInformation("test logger write .");
             _configuration = configuration;
         }
 
