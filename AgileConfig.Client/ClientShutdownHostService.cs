@@ -18,6 +18,7 @@ namespace AgileConfig.Client
         {
             try
             {
+                // close websocket
                 await ConfigClient.Instance?.DisconnectAsync();
             }
             catch
