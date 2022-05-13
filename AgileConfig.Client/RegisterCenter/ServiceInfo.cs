@@ -39,4 +39,92 @@ namespace AgileConfig.Client.RegisterCenter
 
         public int Interval { get; set; } = 30;
     }
+
+    public static class ServiceInfoExtension
+    {
+        public static string AsHttpHost(this ServiceInfo serviceInfo)
+        {
+            if (serviceInfo == null)
+            {
+                return "";
+            }
+
+            const string schema = "http";
+            var host = $"{schema}://{serviceInfo.Ip}";
+            if (serviceInfo.Port.HasValue)
+            {
+                host += $":{serviceInfo.Port}";
+            }
+
+            return host;
+        }
+
+        public static string AsHttpsHost(this ServiceInfo serviceInfo)
+        {
+            if (serviceInfo == null)
+            {
+                return "";
+            }
+
+            const string schema = "https";
+            var host = $"{schema}://{serviceInfo.Ip}";
+            if (serviceInfo.Port.HasValue)
+            {
+                host += $":{serviceInfo.Port}";
+            }
+
+            return host;
+        }
+
+        public static string AsWsHost(this ServiceInfo serviceInfo)
+        {
+            if (serviceInfo == null)
+            {
+                return "";
+            }
+
+            const string schema = "ws";
+            var host = $"{schema}://{serviceInfo.Ip}";
+            if (serviceInfo.Port.HasValue)
+            {
+                host += $":{serviceInfo.Port}";
+            }
+
+            return host;
+        }
+
+        public static string AsWssHost(this ServiceInfo serviceInfo)
+        {
+            if (serviceInfo == null)
+            {
+                return "";
+            }
+
+            const string schema = "wss";
+            var host = $"{schema}://{serviceInfo.Ip}";
+            if (serviceInfo.Port.HasValue)
+            {
+                host += $":{serviceInfo.Port}";
+            }
+
+            return host;
+        }
+
+        public static string AsTcpHost(this ServiceInfo serviceInfo)
+        {
+            if (serviceInfo == null)
+            {
+                return "";
+            }
+
+            const string schema = "tcp";
+            var host = $"{schema}://{serviceInfo.Ip}";
+            if (serviceInfo.Port.HasValue)
+            {
+                host += $":{serviceInfo.Port}";
+            }
+
+            return host;
+        }
+    }
 }
