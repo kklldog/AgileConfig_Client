@@ -9,11 +9,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static void AddAgileConfig(this IServiceCollection services)
         {
             ConfigClient.Instance.Logger = GetLogger(services);
-            services.AddSingleton<IConfigClient>(sp =>
-            {
-                ConfigClient.Instance.Logger = GetLogger(services);
-                return ConfigClient.Instance;
-            });
+            services.AddSingleton(sp => ConfigClient.Instance);
             services.AddHostedService<ClientShutdownHostService>();
             if (ConfigClient.Instance.Options.RegisterInfo != null)
             {
