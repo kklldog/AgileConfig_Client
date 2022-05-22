@@ -134,6 +134,88 @@ public class HomeController : Controller
         }
     }
 ```
+## 使用服务注册&发现
+在 appsettings.json 的 AgileConfig 节点添加 serviceRegister 节点：
+```
+ "AgileConfig": {
+    "appId": "test_app",
+    "secret": "test_app",
+    "nodes": "http://agileconfig_server.xbaby.xyz/",
+    "name": "client123",
+    "tag": "tag123",
+
+    "serviceRegister": { //服务注册信息，如果不配置该节点，则不会启动任何跟服务注册相关的服务 可选
+      "serviceId": "net6", //服务id，全局唯一，用来唯一标示某个服务
+      "serviceName": "net6MVC服务测试", //服务名，可以重复，某个服务多实例部署的时候这个serviceName就可以重复
+      "ip": "127.0.0.1", //服务的ip 可选
+      "port": 5005, //服务的端口 可选
+  }
+```
+其中 appId , secret 等配置同原来配置中心的使用方式没有任何改变。   
+`serviceRegister` 节点描述的是服务注册信息（如果删除这个节点那么服务注册功能就不会启动）：   
+- serviceId  
+服务id，全局唯一，用来唯一标示某个服务
+- serviceName  
+服务名，可以重复，某个服务多实例部署的时候这个serviceName就可以重复  
+- ip  
+服务的ip 可选
+- port   
+服务的端口 可选
+- metaData  
+一个字符串数组，可以携带一些服务的相关信息，如版本等 可选
+- alarmUrl  
+告警地址 可选。   
+如果某个服务出现异常情况，如一段时间内没有心跳，那么服务端会往这个地址 POST 一个请求并且携带服务相关信息，用户可以自己去实现提醒功能，比如发短信，发邮件等：
+```
+{
+    "serviceId":"0001",
+    "serviceName":"xxxx",
+    "time":"2022-01-01T12:00:000",
+    "status":"Unhealty",
+    "message": "服务不健康"
+}
+```
+- heartbeat:mode  
+指定心跳的模式，server/client 。server代表服务端主动检测，client代表客户端主动上报。不填默认client模式 可选
+- heartbeat:interval  
+心跳的间隔，默认时间30s 可选
+- heartbeat:url  
+心跳模式为 server 的时候需要填写健康检测地址，如果是httpstatus为200段则判定存活，其它都视为失败 可选   
+### 服务的注册
+当配置好客户端后，启动对应的应用程序，服务信息会自动注册到服务端并且开始心跳。如果服务正确注册到服务端，控制台的服务管理界面可以查看：
+![](https://static.xbaby.xyz/serviceregister.png)
+### 服务发现
+现在服务已经注册上去了，那么怎么才能拿到注册中心所有的服务呢？同样非常简单，在程序内只要注入`IDiscoveryService `接口就可以通过它拿到所有的注册的服务。
+```
+public interface IDiscoveryService
+    {
+        string DataVersion { get; }
+        List<ServiceInfo> UnHealthyServices { get; }
+        List<ServiceInfo> HealthyServices { get; }
+        List<ServiceInfo> Services { get; }
+        Task RefreshAsync();
+    }
+```
+除了接口内置的方法，还有几个扩展方法方便用户使用，比如随机一个服务：
+```
+    public static class DiscoveryServiceExtension
+    {
+        public static IEnumerable<ServiceInfo> GetByServiceName(this IDiscoveryService ds, string serviceName)
+        {
+            return ds.Services.GetByServiceName(serviceName);
+        }
+
+        public static ServiceInfo GetByServiceId(this IDiscoveryService ds, string serviceId)
+        {
+            return ds.Services.GetByServiceId(serviceId);
+        }
+
+        public static ServiceInfo RandomOne(this IDiscoveryService ds, string serviceName)
+        {
+            return ds.Services.RandomOne(serviceName);
+        }
+    }
+```
 ## 联系我
 有什么问题可以mail我：minj.zhou@gmail.com
 也可以加qq群：1022985150
