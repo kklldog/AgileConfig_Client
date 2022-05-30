@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +29,6 @@ namespace AgileConfig.Client
         private bool _isAutoReConnecting = false;
         private bool _isWsHeartbeating = false;
         private ClientWebSocket _WebsocketClient;
-        private bool _adminSayOffline = false;
         private bool _isLoadFromLocal = false;
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
@@ -39,7 +37,7 @@ namespace AgileConfig.Client
 
         /// <summary>
         /// client的实例对象，每次new的时候构造函数会吧this直接赋值给Instance，
-        /// 一般来说你可以直接使用这个属性来拿到client对象，但是如果你手动new多个client的话，这个Instance代表最后new的那一个client。
+        /// 一般来说你可以直接使用这个属性来拿到client对象，但是如果你手动new多个client的话，这个Instance代表最后new的那一个client，强烈不建议这么玩。
         /// </summary>
         public static IConfigClient Instance { get; private set; }
 
@@ -428,7 +426,7 @@ namespace AgileConfig.Client
                 {
                     var wsUrl = GenerateWSUrl(server, clientName, tag);
                     Logger?.LogTrace("client try connect to server {0}", wsUrl);
-                    await client.ConnectAsync(new Uri(wsUrl), CancellationToken.None).ConfigureAwait(false);
+                    await client.ConnectAsync(new Uri(wsUrl), this.ReconnectCancellationToken).ConfigureAwait(false);
                     if (client.State == WebSocketState.Open)
                     {
                         Logger?.LogTrace("client connect server {0} successful .", wsUrl);
@@ -504,9 +502,9 @@ namespace AgileConfig.Client
 
             Task.Factory.StartNew(async () =>
             {
-                while (this.ReconnectCancellationToken == CancellationToken.None || !this.ReconnectCancellationToken.IsCancellationRequested)
+                while (_isAutoReConnecting && (this.ReconnectCancellationToken == CancellationToken.None || !this.ReconnectCancellationToken.IsCancellationRequested))
                 {
-                    await Task.Delay(1000 * this.WebsocketReconnectInterval).ConfigureAwait(false);
+                    await Task.Delay(1000 * this.WebsocketReconnectInterval, this.ReconnectCancellationToken).ConfigureAwait(false);
 
                     if (_WebsocketClient?.State == WebSocketState.Open)
                     {
@@ -518,7 +516,7 @@ namespace AgileConfig.Client
                         _WebsocketClient?.Dispose();
                         this.Status = ConnectStatus.Disconnected;
 
-                        if (_adminSayOffline)
+                        if (!_isAutoReConnecting)
                         {
                             break;
                         }
@@ -561,20 +559,20 @@ namespace AgileConfig.Client
             Task.Factory.StartNew(async () =>
             {
                 var data = Encoding.UTF8.GetBytes("ping");
-                while (this.ReconnectCancellationToken == CancellationToken.None || !this.ReconnectCancellationToken.IsCancellationRequested)
+                while (_isWsHeartbeating && (this.ReconnectCancellationToken == CancellationToken.None || !this.ReconnectCancellationToken.IsCancellationRequested))
                 {
-                    await Task.Delay(1000 * this.WebsocketHeartbeatInterval).ConfigureAwait(false);
-                    if (_adminSayOffline)
-                    {
-                        break;
-                    }
+                    await Task.Delay(1000 * this.WebsocketHeartbeatInterval, this.ReconnectCancellationToken).ConfigureAwait(false);
+                    //if (_adminSayOffline)
+                    //{
+                    //    break;
+                    //}
                     if (_WebsocketClient?.State == WebSocketState.Open)
                     {
                         try
                         {
                             //这里由于多线程的问题，WebsocketClient有可能在上一个if判断成功后被置空或者断开，所以需要try一下避免线程退出
                             await _WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
-                                    CancellationToken.None).ConfigureAwait(false);
+                                    this.ReconnectCancellationToken).ConfigureAwait(false);
                             Logger?.LogTrace("client send 'ping' to server by websocket .");
                         }
                         catch (Exception ex)
@@ -599,7 +597,7 @@ namespace AgileConfig.Client
                     WebSocketReceiveResult result = null;
                     try
                     {
-                        result = await _WebsocketClient.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
+                        result = await _WebsocketClient.ReceiveAsync(buffer, this.ReconnectCancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -608,7 +606,7 @@ namespace AgileConfig.Client
                     }
                     if (result != null && result.CloseStatus.HasValue)
                     {
-                        Logger?.LogTrace("client closed , {0} .", result.CloseStatusDescription);
+                        Logger?.LogTrace("client closed {0} .", result.CloseStatusDescription);
                         break;
                     }
                     ProcessMessage(result, buffer);
@@ -625,10 +623,8 @@ namespace AgileConfig.Client
                     switch (action.Action)
                     {
                         case ActionConst.Offline:
-                            _adminSayOffline = true;
-                            await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
-                            this.Status = ConnectStatus.Disconnected;
-                            Logger?.LogTrace("client offline because admin console send a command 'offline' ,");
+                            await this.DisconnectAsync();
+                            Logger?.LogTrace("client offline because admin console send a command 'offline' .");
                             NoticeChangedAsync(ActionConst.Offline);
                             break;
                         case ActionConst.Reload:
@@ -710,7 +706,7 @@ namespace AgileConfig.Client
             Task.Run(() =>
             {
                 _options.ConfigChanged(new ConfigChangedArg(action, key));
-            });
+            }, this.ReconnectCancellationToken);
         }
 
         private string GenerateKey(ConfigItem item)
@@ -845,6 +841,21 @@ namespace AgileConfig.Client
             var md5 = Encrypt.Md5(txt);
 
             return md5;
+        }
+
+        public async Task<bool> DisconnectAsync()
+        {
+            this._isAutoReConnecting = false;
+            this._isWsHeartbeating = false;
+            if (this._WebsocketClient?.State == WebSocketState.Open)
+            {
+                await this._WebsocketClient?.CloseAsync(WebSocketCloseStatus.Empty, null , CancellationToken.None);
+            }
+            this.Status = ConnectStatus.Disconnected;
+            this._WebsocketClient?.Dispose();
+            this._WebsocketClient = null;
+
+            return true;
         }
     }
 }

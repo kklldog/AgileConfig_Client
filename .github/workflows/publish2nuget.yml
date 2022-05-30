@@ -20,8 +20,6 @@ jobs:
     - name: Build
       run: dotnet build -c Release --no-restore
     - name: Package
-      if: github.ref == 'refs/heads/master'
       run: dotnet pack -c Release -o . AgileConfig.Client.csproj
     - name: Publish
-      if: github.ref == 'refs/heads/master'
       run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json

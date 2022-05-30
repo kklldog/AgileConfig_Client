@@ -35,6 +35,8 @@ namespace AgileConfig.Client
 
         Task<bool> ConnectAsync();
 
+        Task<bool> DisconnectAsync();
+
         Task<bool> Load();
 
         void LoadConfigs(List<ConfigItem> configs);
