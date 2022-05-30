@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +29,6 @@ namespace AgileConfig.Client
         private bool _isAutoReConnecting = false;
         private bool _isWsHeartbeating = false;
         private ClientWebSocket _WebsocketClient;
-        private bool _adminSayOffline = false;
         private bool _isLoadFromLocal = false;
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
@@ -39,7 +37,7 @@ namespace AgileConfig.Client
 
         /// <summary>
         /// client的实例对象，每次new的时候构造函数会吧this直接赋值给Instance，
-        /// 一般来说你可以直接使用这个属性来拿到client对象，但是如果你手动new多个client的话，这个Instance代表最后new的那一个client。
+        /// 一般来说你可以直接使用这个属性来拿到client对象，但是如果你手动new多个client的话，这个Instance代表最后new的那一个client，强烈不建议这么玩。
         /// </summary>
         public static IConfigClient Instance { get; private set; }
 
@@ -457,7 +455,7 @@ namespace AgileConfig.Client
 
             Task.Factory.StartNew(async () =>
             {
-                while (true)
+                while (_isAutoReConnecting)
                 {
                     await Task.Delay(1000 * _WebsocketReconnectInterval).ConfigureAwait(false);
 
@@ -471,7 +469,7 @@ namespace AgileConfig.Client
                         _WebsocketClient?.Dispose();
                         this.Status = ConnectStatus.Disconnected;
 
-                        if (_adminSayOffline)
+                        if (!_isAutoReConnecting)
                         {
                             break;
                         }
@@ -514,13 +512,9 @@ namespace AgileConfig.Client
             Task.Factory.StartNew(async () =>
             {
                 var data = Encoding.UTF8.GetBytes("ping");
-                while (true)
+                while (_isWsHeartbeating)
                 {
                     await Task.Delay(1000 * _WebsocketHeartbeatInterval).ConfigureAwait(false); ;
-                    if (_adminSayOffline)
-                    {
-                        break;
-                    }
                     if (_WebsocketClient?.State == WebSocketState.Open)
                     {
                         try
@@ -561,7 +555,7 @@ namespace AgileConfig.Client
                     }
                     if (result != null && result.CloseStatus.HasValue)
                     {
-                        Logger?.LogTrace("client closed , {0} .", result.CloseStatusDescription);
+                        Logger?.LogTrace("client closed {0} .", result.CloseStatusDescription);
                         break;
                     }
                     ProcessMessage(result, buffer);
@@ -578,10 +572,8 @@ namespace AgileConfig.Client
                     switch (action.Action)
                     {
                         case ActionConst.Offline:
-                            _adminSayOffline = true;
-                            await _WebsocketClient.CloseAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None).ConfigureAwait(false);
-                            this.Status = ConnectStatus.Disconnected;
-                            Logger?.LogTrace("client offline because admin console send a command 'offline' ,");
+                            await this.DisconnectAsync();
+                            Logger?.LogTrace("client offline because admin console send a command 'offline' .");
                             NoticeChangedAsync(ActionConst.Offline);
                             break;
                         case ActionConst.Reload:
@@ -798,6 +790,21 @@ namespace AgileConfig.Client
             var md5 = Encrypt.Md5(txt);
 
             return md5;
+        }
+
+        public async Task<bool> DisconnectAsync()
+        {
+            this._isAutoReConnecting = false;
+            this._isWsHeartbeating = false;
+            if (this._WebsocketClient?.State == WebSocketState.Open)
+            {
+                await this._WebsocketClient?.CloseAsync(WebSocketCloseStatus.Empty, null , CancellationToken.None);
+            }
+            this.Status = ConnectStatus.Disconnected;
+            this._WebsocketClient?.Dispose();
+            this._WebsocketClient = null;
+
+            return true;
         }
     }
 }

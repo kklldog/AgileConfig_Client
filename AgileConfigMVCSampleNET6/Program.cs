@@ -1,11 +1,22 @@
+using NLog.Extensions.Logging;
+using NLog.Web;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Host.UseSerilog((ctx, lc) => lc
-    .WriteTo.Console()
-    );
+
+// use serilog
+//builder.Host.UseSerilog((ctx, lc) => lc
+//    .WriteTo.Console()
+//    );
 //use agileconfig client
 builder.Host.UseAgileConfig();
+
+//use nlog
+builder.Services.AddLogging(b => {
+    var config = builder.Configuration;
+    NLog.LogManager.Configuration = new NLogLoggingConfiguration(config.GetSection("NLog"));
+    b.AddNLogWeb();
+});
 
 // Add services to the container.
 builder.Services.AddRazorPages();

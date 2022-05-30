@@ -23,7 +23,7 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
 
         public IChannel Pick()
         {
-            if (_client != null && _client.WebSocket.State == System.Net.WebSockets.WebSocketState.Open)
+            if (_client != null && _client.WebSocket?.State == System.Net.WebSockets.WebSocketState.Open)
             {
                 return _wsChan;
             }
