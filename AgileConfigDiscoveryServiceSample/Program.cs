@@ -1,4 +1,5 @@
 using AgileConfig.Client;
+using AgileConfig.Client.RegisterCenter;
 
 var builder = WebApplication.CreateBuilder(args);
 

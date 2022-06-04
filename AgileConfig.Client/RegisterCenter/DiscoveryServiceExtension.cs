@@ -20,14 +20,28 @@ namespace AgileConfig.Client.RegisterCenter
         public static ServiceInfo RandomOne(this IEnumerable<ServiceInfo> services, string serviceName)
         {
             var list = GetByServiceName(services, serviceName);
-            if (list?.Count() == 0)
+            var serviceCount = list?.Count();
+            if (!serviceCount.HasValue || serviceCount == 0)
             {
                 return null;
             }
 
-            var index = new Random().Next(list.Count());
+            var index = new Random().Next(serviceCount.Value);
 
-            return list.Skip(index).Take(1).First();
+            return list.Skip(index).Take(1).FirstOrDefault();
+        }
+
+        public static ServiceInfo RandomOne(this IEnumerable<ServiceInfo> services)
+        {
+            var serviceCount = services?.Count();
+            if (!serviceCount.HasValue || serviceCount == 0)
+            {
+                return null;
+            }
+
+            var index = new Random().Next(serviceCount.Value);
+
+            return services.Skip(index).Take(1).FirstOrDefault();
         }
     }
 
@@ -46,6 +60,11 @@ namespace AgileConfig.Client.RegisterCenter
         public static ServiceInfo RandomOne(this IDiscoveryService ds, string serviceName)
         {
             return ds.Services.RandomOne(serviceName);
+        }
+
+        public static ServiceInfo RandomOne(this IDiscoveryService ds)
+        {
+            return ds.Services.RandomOne();
         }
     }
 }
