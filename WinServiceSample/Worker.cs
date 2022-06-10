@@ -30,7 +30,7 @@ namespace WinServiceSample
                     var val = _client[key];
                     Console.WriteLine("{0} : {1}", key, val);
                 }
-                await Task.Delay(5000, stoppingToken);
+                await Task.Delay(10000, stoppingToken);
             }
         }
     }
