@@ -21,6 +21,28 @@ namespace Microsoft.Extensions.Hosting
 
             return builder;
         }
+
+        public static IHostBuilder UseAgileConfig(this IHostBuilder builder, string appsettingsFileName, Action<ConfigChangedArg> e = null)
+        {
+            builder.ConfigureAppConfiguration((_, cfb) =>
+            {
+                if (String.IsNullOrEmpty(appsettingsFileName))
+                {
+                    cfb.AddAgileConfig(e);
+                }
+                else
+                {
+                    cfb.AddAgileConfig(new ConfigClient(appsettingsFileName), e);
+                }
+            })
+            .ConfigureServices((ctx, services) =>
+            {
+                services.AddAgileConfig();
+            });
+
+            return builder;
+        }
+
         public static IHostBuilder UseAgileConfig(this IHostBuilder builder, IConfigClient client, Action<ConfigChangedArg> e = null)
         {
             builder.ConfigureAppConfiguration((_, cfb) =>

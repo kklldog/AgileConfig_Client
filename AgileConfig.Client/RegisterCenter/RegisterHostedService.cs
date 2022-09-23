@@ -13,14 +13,11 @@ namespace AgileConfig.Client.RegisterCenter
         private IRegisterService _registerService;
         private HeartbeatService _heartbeatService;
         private ILoggerFactory _loggerFactory;
-        private IDiscoveryService _discoveryService;
         public RegisterHostedService(IRegisterService registerServicer,
-            IDiscoveryService discoveryService,
             ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
             _registerService = registerServicer;
-            _discoveryService = discoveryService;
             _heartbeatService = new HeartbeatService(ConfigClient.Instance, _loggerFactory);
         }
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -45,7 +42,7 @@ namespace AgileConfig.Client.RegisterCenter
             var logger = _loggerFactory.CreateLogger<RegisterHostedService>();
 
             logger.LogInformation("RegiserHostedService stoping ...");
-            logger.LogInformation("try to unregister serviceinfo to server .");
+            logger.LogInformation("try to unregister serviceinfo from server .");
 
             await _registerService.UnRegisterAsync();
         }

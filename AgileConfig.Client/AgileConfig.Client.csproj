@@ -3,13 +3,13 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>mj.zhou;ncc</Authors>
-    <Version>1.6.2.1</Version>
+    <Version>1.6.9</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>A client for AgileConfig .</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kklldog/AgileConfig</PackageProjectUrl>
-    <AssemblyVersion>1.6.2.1</AssemblyVersion>
-    <FileVersion>1.6.2.1</FileVersion>
+    <AssemblyVersion>1.6.9</AssemblyVersion>
+    <FileVersion>1.6.9</FileVersion>
     <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
@@ -27,7 +27,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
 </Project>
