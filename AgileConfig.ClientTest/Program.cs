@@ -52,7 +52,7 @@ namespace AgileConfigClientTest
                 {
                     var regService = new RegisterService(client, lf);
                     var disService = new DiscoveryService(client, lf);
-                    var service = new RegisterHostedService(regService, disService, lf);
+                    var service = new RegisterHostedService(regService, lf);
 
                     await service.StartAsync(CancellationToken.None);
                 }

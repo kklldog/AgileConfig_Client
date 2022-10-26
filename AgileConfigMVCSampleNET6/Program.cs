@@ -1,3 +1,4 @@
+using AgileConfigMVCSampleNET6;
 using NLog.Extensions.Logging;
 using NLog.Web;
 using Serilog;
@@ -20,6 +21,8 @@ builder.Services.AddLogging(b => {
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+
+builder.Services.Configure<GlobalOptions>(builder.Configuration.GetSection("Global"));
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.
