@@ -8,8 +8,4 @@
     <ProjectReference Include="..\AgileConfig.Client\AgileConfig.Client.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\AgileConfig.Client\AgileConfig.Client.csproj" />
-  </ItemGroup>
-
 </Project>

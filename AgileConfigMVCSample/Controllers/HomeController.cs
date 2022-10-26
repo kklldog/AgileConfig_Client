@@ -72,13 +72,12 @@ namespace AgileConfigMVCSample.Controllers
         /// 直接使用ConfigClient的实例读取配置
         /// </summary>
         /// <returns></returns>
-        public IActionResult ByInstance()
+        public async Task<IActionResult> ByInstance()
         {
-            var userId = _IConfigClient["userId"];
-            var dbConn = _IConfigClient["db:connection"];
+            await _IConfigClient.Load();
+            var data = _IConfigClient.Data;
 
-            ViewBag.userId = userId;
-            ViewBag.dbConn = dbConn;
+            ViewBag.data = data;
 
             return View("Configuration");
         }

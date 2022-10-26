@@ -3,14 +3,19 @@
 }
 
     <div class="text-center">
-        <p>
-            <h2>
-                userId: @ViewBag.userId
-            </h2>
-        </p>
-        <p>
-            <h2>
-               db connection: @ViewBag.dbConn
-            </h2>
-        </p>
+        <table>
+          
+    @{
+        System.Collections.Concurrent.ConcurrentDictionary<string, string> data = ViewBag.data;
+        for(int i = 0; i < data.Count; i++)
+        {
+            string key = data.Keys.ElementAt(i);
+            string value = data[key];       
+            <tr>
+                <td style="text-align:right;">@key：</td>
+                <td style="text-align:left;">@value</td>
+            </tr>
+        }
+    }             
+        </table>
     </div>
