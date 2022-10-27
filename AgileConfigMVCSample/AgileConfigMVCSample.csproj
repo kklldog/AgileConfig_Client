@@ -5,6 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="agile\**" />
+    <Content Remove="agile\**" />
+    <EmbeddedResource Remove="agile\**" />
+    <None Remove="agile\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\AgileConfig.Client\AgileConfig.Client.csproj" />
   </ItemGroup>
 
