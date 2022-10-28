@@ -30,7 +30,7 @@ namespace AgileConfigClientTest
                     {
                         while (true)
                         {
-                            await Task.Delay(5000);
+                            await Task.Delay(10000);
                             foreach (string key in client.Data.Keys)
                             {
                                 var val = client[key];
