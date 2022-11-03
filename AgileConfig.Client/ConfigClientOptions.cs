@@ -35,7 +35,7 @@ namespace AgileConfig.Client
         /// 检查是否连接打开状态，如果不是则尝试重连，循环休眠时间，秒，
         /// 如果小于0则不重连
         /// </summary>
-        public int WebsocketReconnectInterval { get; set; } = 10;
+        public int WebsocketReconnectInterval { get; set; } = 5;
         /// <summary>
         /// 心跳间隔时间，秒，
         /// 如果小于0则不心跳
