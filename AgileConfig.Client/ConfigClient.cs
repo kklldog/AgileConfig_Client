@@ -34,6 +34,7 @@ namespace AgileConfig.Client
         private List<ConfigItem> _configs = new List<ConfigItem>();
         private ILogger _consoleLogger;
         private string LocalCacheFileName => Path.Combine(_options.CacheDirectory, $"{_options.AppId}.agileconfig.client.configs.cache");
+        private DateTime _lastRefreshTime = new DateTime(1970, 1, 1);
 
         /// <summary>
         /// client的实例对象，每次new的时候构造函数会吧this直接赋值给Instance，
@@ -189,6 +190,22 @@ namespace AgileConfig.Client
                 _options.ConfigChanged -= value;
             }
         }
+
+        /// <summary>
+        /// 最后刷新配置数据的时间
+        /// </summary>
+        public DateTime LastRefreshTime
+        {
+            get
+            {
+                return this._lastRefreshTime;
+            }
+            private set
+            {
+                this._lastRefreshTime = value;
+            }
+        }
+
         /// <summary>
         /// 所有的配置项最后都会转换为字典
         /// </summary>
@@ -435,7 +452,7 @@ namespace AgileConfig.Client
             var fileContent = ReadConfigsFromLocal();
             if (!string.IsNullOrEmpty(fileContent))
             {
-                ReloadDataDictFromContent(fileContent);
+                ReloadDataDictFromContent(fileContent, true);
                 _isLoadFromLocal = true;
                 Logger?.LogTrace("client load all configs from local file .");
             }
@@ -498,7 +515,7 @@ namespace AgileConfig.Client
             return "Basic " + Convert.ToBase64String(data);
         }
         /// <summary>
-        /// 开启一个线程30s进行一次心跳
+        /// 开启一个线程30s进行一次心跳 ping
         /// </summary>
         /// <returns></returns>
         public void WebsocketHeartbeatAsync()
@@ -511,7 +528,7 @@ namespace AgileConfig.Client
 
             Task.Factory.StartNew(async () =>
             {
-                var data = Encoding.UTF8.GetBytes("ping");
+                //var data = Encoding.UTF8.GetBytes("ping");
                 while (_isWsHeartbeating)
                 {
                     await Task.Delay(1000 * _WebsocketHeartbeatInterval).ConfigureAwait(false); ;
@@ -519,6 +536,11 @@ namespace AgileConfig.Client
                     {
                         try
                         {
+                            //刷新时间参数
+                            var objData = new { LastRefreshTime = this.LastRefreshTime };
+                            var wsParam = $"ping:{JsonConvert.SerializeObject(objData)}";
+                            var data = Encoding.UTF8.GetBytes(wsParam);
+
                             //这里由于多线程的问题，WebsocketClient有可能在上一个if判断成功后被置空或者断开，所以需要try一下避免线程退出
                             await _WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
                                     CancellationToken.None).ConfigureAwait(false);
@@ -586,7 +608,10 @@ namespace AgileConfig.Client
                             var localVersion = this.DataMd5Version();
                             if (action.Data != localVersion)
                             {
-                                await Load();
+                                if (await Load())
+                                {
+                                    NoticeChangedAsync(ActionConst.Ping);
+                                };
                             }
                             break;
                         default:
@@ -694,7 +719,7 @@ namespace AgileConfig.Client
                         if (result.StatusCode == System.Net.HttpStatusCode.OK)
                         {
                             var respContent = await HttpUtil.GetResponseContentAsync(result);
-                            ReloadDataDictFromContent(respContent);
+                            ReloadDataDictFromContent(respContent, false);
                             WriteConfigsToLocal(respContent);
                             _isLoadFromLocal = false;
 
@@ -737,10 +762,31 @@ namespace AgileConfig.Client
             }
         }
 
-        private void ReloadDataDictFromContent(string content)
+        /// <summary>
+        /// 将配置字符串解析为字典
+        /// </summary>
+        /// <param name="content">配置字符串</param>
+        /// <param name="isLoadFromLocal">是否读取的本地缓存</param>
+        private void ReloadDataDictFromContent(string content, bool isLoadFromLocal)
         {
+            string oldMd5 = "";
+            if (!isLoadFromLocal)
+            {
+                oldMd5 = this.DataMd5Version();
+            }
+
             var configs = JsonConvert.DeserializeObject<List<ConfigItem>>(content);
             LoadConfigs(configs);
+
+            if (!isLoadFromLocal)
+            {
+                string newMd5 = this.DataMd5Version();
+                if (!String.Equals(oldMd5, newMd5))
+                {
+                    this.LastRefreshTime = DateTime.Now;
+                    Logger?.LogTrace("client load all the configs success, reload data from content, refresh time: {0}", this.LastRefreshTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                }
+            }
         }
 
 
