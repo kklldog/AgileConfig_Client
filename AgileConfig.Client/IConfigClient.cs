@@ -49,5 +49,6 @@ namespace AgileConfig.Client
 
         ClientWebSocket WebSocket { get;  }
 
+        DateTime? LastLoadedTimeFromServer { get; }
     }
 }
