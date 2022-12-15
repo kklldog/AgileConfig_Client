@@ -194,6 +194,11 @@ namespace AgileConfig.Client
         /// </summary>
         public ConcurrentDictionary<string, string> Data => _data;
 
+        public DateTime? LastLoadedTimeFromServer
+        {
+            get; private set;
+        }
+
         public string this[string key]
         {
             get
@@ -694,7 +699,9 @@ namespace AgileConfig.Client
                         if (result.StatusCode == System.Net.HttpStatusCode.OK)
                         {
                             var respContent = await HttpUtil.GetResponseContentAsync(result);
+                            LastLoadedTimeFromServer = DateTime.Now;
                             ReloadDataDictFromContent(respContent);
+                            await SendLoadedNotice();
                             WriteConfigsToLocal(respContent);
                             _isLoadFromLocal = false;
 
@@ -743,6 +750,27 @@ namespace AgileConfig.Client
             LoadConfigs(configs);
         }
 
+        /// <summary>
+        /// send client loaded message to server
+        /// </summary>
+        /// <returns></returns>
+        private async Task SendLoadedNotice()
+        {
+            var data = Encoding.UTF8.GetBytes("loaded");
+            if (_WebsocketClient?.State == WebSocketState.Open)
+            {
+                try
+                {
+                    await _WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
+                            CancellationToken.None).ConfigureAwait(false);
+                    Logger?.LogTrace("client send 'loaded' to server by websocket .");
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogError(ex, "client try to send loaded msg to server but failed.");
+                }
+            }
+        }
 
         private void WriteConfigsToLocal(string configContent)
         {
