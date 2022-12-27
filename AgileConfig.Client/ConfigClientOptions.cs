@@ -70,7 +70,10 @@ namespace AgileConfig.Client
 
             var localconfig = new ConfigurationBuilder()
                              .SetBasePath(rootDir)
-                             .AddJsonFile(json).AddEnvironmentVariables().Build();
+                             .AddJsonFile(json)
+                             .AddEnvironmentVariables()
+                             .AddCommandLine(Environment.GetCommandLineArgs())
+                             .Build();
 
             var configSection = localconfig.GetSection("AgileConfig");
             if (!configSection.Exists())
@@ -90,7 +93,10 @@ namespace AgileConfig.Client
 
             var localconfig = new ConfigurationBuilder()
                              .SetBasePath(rootDir)
-                             .AddJsonFile(json).AddEnvironmentVariables().Build();
+                             .AddJsonFile(json)
+                             .AddEnvironmentVariables()
+                             .AddCommandLine(Environment.GetCommandLineArgs())
+                             .Build();
 
             return FromConfiguration(localconfig);
         }
