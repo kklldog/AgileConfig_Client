@@ -154,7 +154,7 @@ public class HomeController : Controller
 其中 appId , secret 等配置同原来配置中心的使用方式没有任何改变。   
 `serviceRegister` 节点描述的是服务注册信息（如果删除这个节点那么服务注册功能就不会启动）：   
 - serviceId  
-服务id，全局唯一，用来唯一标示某个服务
+服务id，全局唯一，用来唯一标示某个服务，client 1.6.12 开始不再必填。如果不填，则自动生产一个 guid
 - serviceName  
 服务名，可以重复，某个服务多实例部署的时候这个serviceName就可以重复  
 - ip  
