@@ -1,7 +1,6 @@
 # AgileConfig_Client
 AgileConfig 的客户端，.net core standard2.0实现 。     
 
-[![package](https://github.com/kklldog/AgileConfig_Client/actions/workflows/publish2nuget.yml/badge.svg)](https://github.com/kklldog/AgileConfig_Client/actions/workflows/publish2nuget.yml)
 ![Nuget](https://img.shields.io/nuget/v/agileconfig.client?label=client%20version)
 ![Nuget](https://img.shields.io/nuget/dt/agileconfig.client?label=nuget%20download)
 ## 使用客户端
@@ -145,7 +144,7 @@ public class HomeController : Controller
     "tag": "tag123",
 
     "serviceRegister": { //服务注册信息，如果不配置该节点，则不会启动任何跟服务注册相关的服务 可选
-      "serviceId": "net6", //服务id，全局唯一，用来唯一标示某个服务
+      "serviceId": "net6", //服务id，全局唯一，用来唯一标示某个服务 ，client 1.6.12 开始不再必填。如果不填，则自动生产一个 guid
       "serviceName": "net6MVC服务测试", //服务名，可以重复，某个服务多实例部署的时候这个serviceName就可以重复
       "ip": "127.0.0.1", //服务的ip 可选
       "port": 5005, //服务的端口 可选
