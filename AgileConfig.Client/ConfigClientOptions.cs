@@ -156,8 +156,19 @@ namespace AgileConfig.Client
             var serviceId = config["AgileConfig:serviceRegister:serviceId"];
             if (string.IsNullOrWhiteSpace(serviceId))
             {
-                throw new ArgumentNullException("serviceRegister:serviceId");
+                // 如果配置文件上没有填尝试从本地恢复id
+                serviceId = TryGetIdFromLocal(cacheDir, appId);
+                DefaultConsoleLogger.LogInformation("because serviceId is empty in the configuration , try to read serviceId from local cache file , the id = " + serviceId);
             }
+            if (string.IsNullOrWhiteSpace(serviceId))
+            {
+                // 如果从本地恢复 id 失败，则生产一个 guid
+                serviceId = Guid.NewGuid().ToString("N");
+                // 保存到本地以便恢复，防止服务重启后又生产一个 guid
+                WriteIdToLocal(cacheDir, appId, serviceId);
+                DefaultConsoleLogger.LogInformation("generate a serviceId = " + serviceId);
+            }
+
             var serviceName = config["AgileConfig:serviceRegister:serviceName"];
             if (string.IsNullOrWhiteSpace(serviceName))
             {
@@ -193,6 +204,56 @@ namespace AgileConfig.Client
             }
 
             return options;
+        }
+
+        private static string TryGetIdFromLocal(string cacheDir, string appId)
+        {
+            string idFileName = Path.Combine(cacheDir, $"{appId}.agileconfig.client.serviceid");
+
+            try
+            {
+                var lines = File.ReadAllLines(idFileName);
+
+                if (lines?.Length > 0)
+                {
+                    return lines[0];
+                }
+            }
+            catch 
+            {
+            }
+
+            return "";
+        }
+
+        private static void WriteIdToLocal(string cacheDir, string appId, string serviceId)
+        {
+            string idFileName = Path.Combine(cacheDir, $"{appId}.agileconfig.client.serviceid");
+
+            File.WriteAllText(idFileName, serviceId);
+        }
+
+        private static ILogger _consoleLogger;
+        public static ILogger DefaultConsoleLogger
+        {
+            get
+            {
+                if (_consoleLogger != null)
+                {
+                    return _consoleLogger;
+                }
+
+                using (var loggerFactory = LoggerFactory.Create(lb =>
+                {
+                    lb.SetMinimumLevel(LogLevel.Trace);
+                    lb.AddConsole();
+                }))
+                {
+                    var logger = loggerFactory.CreateLogger<ConfigClient>();
+                    _consoleLogger = logger;
+                    return _consoleLogger;
+                }
+            }
         }
     }
 }

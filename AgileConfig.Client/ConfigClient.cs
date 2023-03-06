@@ -32,7 +32,6 @@ namespace AgileConfig.Client
         private bool _isLoadFromLocal = false;
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
-        private ILogger _consoleLogger;
         private string LocalCacheFileName => Path.Combine(_options.CacheDirectory, $"{_options.AppId}.agileconfig.client.configs.cache");
 
         /// <summary>
@@ -46,28 +45,6 @@ namespace AgileConfig.Client
             get
             {
                 return _WebsocketClient;
-            }
-        }
-
-        private ILogger ConsoleLogger
-        {
-            get
-            {
-                if (_consoleLogger != null)
-                {
-                    return _consoleLogger;
-                }
-
-                using (var loggerFactory = LoggerFactory.Create(lb =>
-                {
-                    lb.SetMinimumLevel(LogLevel.Trace);
-                    lb.AddConsole();
-                }))
-                {
-                    var logger = loggerFactory.CreateLogger<ConfigClient>();
-                    _consoleLogger = logger;
-                    return _consoleLogger;
-                }
             }
         }
 
@@ -86,7 +63,7 @@ namespace AgileConfig.Client
                 if (_options.Logger == null)
                 {
                     // 给一个默认的 console logger
-                    return ConsoleLogger;
+                    return ConfigClientOptions.DefaultConsoleLogger;
                 }
 
                 return _options.Logger;
