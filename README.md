@@ -1,7 +1,8 @@
 # AgileConfig_Client
 AgileConfig 的客户端，.net core standard2.0实现 。     
 
-![Nuget](https://img.shields.io/nuget/v/agileconfig.client?label=client%20version)
+![Nuget](https://github.com/kklldog/AgileConfig_Client/actions/workflows/publish2nuget.yml/badge.svg?branch=publish)
+![Nuget](https://img.shields.io/nuget/v/agileconfig.client?label=v)
 ![Nuget](https://img.shields.io/nuget/dt/agileconfig.client?label=nuget%20download)
 ## 使用客户端
 ### 安装客户端
