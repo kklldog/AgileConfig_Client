@@ -12,5 +12,7 @@ namespace AgileConfig.Client.RegisterCenter
         List<ServiceInfo> HealthyServices { get; }
         List<ServiceInfo> Services { get; }
         Task RefreshAsync();
+
+        event Action ReLoaded;
     }
 }

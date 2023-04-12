@@ -3,12 +3,12 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>mj.zhou;ncc</Authors>
-    <Version>1.6.12</Version>
+    <Version>1.6.13</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>A client for AgileConfig .</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kklldog/AgileConfig</PackageProjectUrl>
-    <AssemblyVersion>1.6.12</AssemblyVersion>
+    <AssemblyVersion>1.6.13</AssemblyVersion>
     <FileVersion>1.6.12</FileVersion>
     <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>

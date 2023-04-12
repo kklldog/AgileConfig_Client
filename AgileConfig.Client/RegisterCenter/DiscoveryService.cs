@@ -27,6 +27,11 @@ namespace AgileConfig.Client.RegisterCenter
 
         private string LocalCacheFileName => Path.Combine(_options?.CacheDirectory, $"{_options?.AppId}.agileconfig.client.services.cache");
 
+        /// <summary>
+        /// service list be reloaded
+        /// </summary>
+        public event Action ReLoaded;
+
         public DiscoveryService(IConfigClient client, ILoggerFactory loggerFactory)
         {
             Instance = this;
@@ -145,6 +150,7 @@ namespace AgileConfig.Client.RegisterCenter
                                 this.DataVersion = GenerateMD5(result);
                                 WriteServiceInfosToLocal(content);
                                 _logger.LogTrace($"DiscoveryService refresh all services success by API {getUrl} , status code {resp.StatusCode} .");
+                                ReLoaded?.Invoke();
                             }
                         }
                         break;
