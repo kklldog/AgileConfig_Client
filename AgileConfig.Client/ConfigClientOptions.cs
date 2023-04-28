@@ -35,7 +35,13 @@ namespace AgileConfig.Client
 
         public ILogger Logger { get; set; }
 
+        [Obsolete("This Action will be obsolete, please use ReLaoded Action instead of.")]
         public Action<ConfigChangedArg> ConfigChanged;
+
+        /// <summary>
+        /// 最新的配置被加载到本地后触发。
+        /// </summary>
+        public Action<ConfigReloadedArgs> ReLoaded;
 
         /// <summary>
         /// 确定当前目录是否存在 json 配置文件，使用多种获取目录的形式来确认。

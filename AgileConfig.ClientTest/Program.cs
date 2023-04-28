@@ -24,7 +24,7 @@ namespace AgileConfigClientTest
                 try
                 {
                     client.Logger = lf.CreateLogger<ConfigClient>();
-                    client.ConfigChanged += Client_ConfigChanged;
+                    client.ReLoaded += Client_ReLoaded;
                     await client.ConnectAsync();
                     await Task.Run(async () =>
                     {
@@ -65,15 +65,18 @@ namespace AgileConfigClientTest
             Console.ReadLine();
         }
 
-        /// <summary>
-        /// 此事件会在配置项目发生新增、修改、删除的时候触发
-        /// </summary>
-        /// <param name="obj"></param>
-        private static void Client_ConfigChanged(ConfigChangedArg obj)
+        private static void Client_ReLoaded(ConfigReloadedArgs obj)
         {
-            if (obj != null)
+            var oldConfigs = obj.OldConfigs;
+            var newConfigs = obj.NewConfigs;
+
+            foreach (var item in newConfigs)
             {
-                Console.WriteLine("Client_ConfigChanged, action {0} key {1}", obj.Action, obj.Key);
+                Console.WriteLine($"new {item.Key}={item.Value}");
+            }
+            foreach (var item in oldConfigs)
+            {
+                Console.WriteLine($"old {item.Key}={item.Value}");
             }
         }
 

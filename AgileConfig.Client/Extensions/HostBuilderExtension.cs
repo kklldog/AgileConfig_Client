@@ -8,7 +8,57 @@ namespace Microsoft.Extensions.Hosting
 {
     public static class HostBuilderExtension
     {
-        public static IHostBuilder UseAgileConfig(this IHostBuilder builder, Action<ConfigChangedArg> e = null)
+        public static IHostBuilder UseAgileConfig(this IHostBuilder builder, Action<ConfigReloadedArgs> evt = null)
+        {
+            builder.ConfigureAppConfiguration((_, cfb) =>
+            {
+                cfb.AddAgileConfig(evt);
+            })
+            .ConfigureServices((ctx, services) =>
+            {
+                services.AddAgileConfig();
+            });
+
+            return builder;
+        }
+
+        public static IHostBuilder UseAgileConfig(this IHostBuilder builder, string appsettingsFileName, Action<ConfigReloadedArgs> evt = null)
+        {
+            builder.ConfigureAppConfiguration((_, cfb) =>
+            {
+                if (String.IsNullOrEmpty(appsettingsFileName))
+                {
+                    cfb.AddAgileConfig(evt);
+                }
+                else
+                {
+                    cfb.AddAgileConfig(new ConfigClient(appsettingsFileName), evt);
+                }
+            })
+            .ConfigureServices((ctx, services) =>
+            {
+                services.AddAgileConfig();
+            });
+
+            return builder;
+        }
+
+        public static IHostBuilder UseAgileConfig(this IHostBuilder builder, IConfigClient client, Action<ConfigReloadedArgs> e = null)
+        {
+            builder.ConfigureAppConfiguration((_, cfb) =>
+            {
+                cfb.AddAgileConfig(client, e);
+            })
+            .ConfigureServices((ctx, services) =>
+            {
+                services.AddAgileConfig();
+            });
+
+            return builder;
+        }
+
+        [Obsolete]
+        public static IHostBuilder UseAgileConfig(this IHostBuilder builder, Action<ConfigChangedArg> e)
         {
             builder.ConfigureAppConfiguration((_, cfb) =>
             {
@@ -22,7 +72,8 @@ namespace Microsoft.Extensions.Hosting
             return builder;
         }
 
-        public static IHostBuilder UseAgileConfig(this IHostBuilder builder, string appsettingsFileName, Action<ConfigChangedArg> e = null)
+        [Obsolete]
+        public static IHostBuilder UseAgileConfig(this IHostBuilder builder, string appsettingsFileName, Action<ConfigChangedArg> e)
         {
             builder.ConfigureAppConfiguration((_, cfb) =>
             {
@@ -43,7 +94,8 @@ namespace Microsoft.Extensions.Hosting
             return builder;
         }
 
-        public static IHostBuilder UseAgileConfig(this IHostBuilder builder, IConfigClient client, Action<ConfigChangedArg> e = null)
+        [Obsolete]
+        public static IHostBuilder UseAgileConfig(this IHostBuilder builder, IConfigClient client, Action<ConfigChangedArg> e)
         {
             builder.ConfigureAppConfiguration((_, cfb) =>
             {

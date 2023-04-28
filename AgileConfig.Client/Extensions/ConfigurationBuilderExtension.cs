@@ -1,14 +1,34 @@
 ﻿using AgileConfig.Client;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 
 namespace Microsoft.AspNetCore.Hosting
 {
     public static class ConfigurationBuilderExtension
     {
         public static IConfigurationBuilder AddAgileConfig(
+           this IConfigurationBuilder builder,
+           IConfigClient client, Action<ConfigReloadedArgs> evt = null)
+        {
+            if (evt != null)
+            {
+                client.ReLoaded += evt;
+            }
+
+            return builder.Add(new AgileConfigSource(client));
+        }
+
+        public static IConfigurationBuilder AddAgileConfig(
+          this IConfigurationBuilder builder, Action<ConfigReloadedArgs> evt = null)
+        {
+            return builder.AddAgileConfig(new ConfigClient(), evt);
+        }
+
+        [Obsolete("ConfigChanged event will be obsolete.")]
+        public static IConfigurationBuilder AddAgileConfig(
             this IConfigurationBuilder builder,
-            IConfigClient client, Action<ConfigChangedArg> e = null)
+            IConfigClient client, Action<ConfigChangedArg> e)
         {
             if (e != null)
             {
@@ -18,8 +38,9 @@ namespace Microsoft.AspNetCore.Hosting
             return builder.Add(new AgileConfigSource(client));
         }
 
+        [Obsolete("ConfigChanged event will be obsolete.")]
         public static IConfigurationBuilder AddAgileConfig(
-          this IConfigurationBuilder builder, Action<ConfigChangedArg> e = null)
+          this IConfigurationBuilder builder, Action<ConfigChangedArg> e)
         {
             return builder.AddAgileConfig(new ConfigClient(), e);
         }
@@ -27,7 +48,7 @@ namespace Microsoft.AspNetCore.Hosting
         public static IConfigurationBuilder AddAgileConfig(
           this IConfigurationBuilder builder, ConfigClientOptions options)
         {
-            return builder.AddAgileConfig(new ConfigClient(options));
+            return builder.AddAgileConfig(new ConfigClient(options), evt: null);
         }
 
         public static IConfigurationBuilder AddAgileConfig(
@@ -39,7 +60,7 @@ namespace Microsoft.AspNetCore.Hosting
                 defaultOp = getOp(builder);
             }
 
-            return builder.AddAgileConfig(new ConfigClient(defaultOp));
+            return builder.AddAgileConfig(new ConfigClient(defaultOp), evt: null);
         }
 
         /// <summary>

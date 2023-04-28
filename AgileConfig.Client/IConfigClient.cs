@@ -21,6 +21,17 @@ namespace AgileConfig.Client
         public string Action { get; }
     }
 
+    public class ConfigReloadedArgs
+    {
+        public Dictionary<string, string> OldConfigs { get; }
+        public Dictionary<string, string> NewConfigs { get; }
+        public ConfigReloadedArgs(Dictionary<string,string> oldConfigs, Dictionary<string,string> newConfigs)
+        {
+            this.OldConfigs = oldConfigs;
+            this.NewConfigs = newConfigs;
+        }
+    }
+
     public interface IConfigClient
     {
         ConnectStatus Status { get; }
@@ -41,7 +52,10 @@ namespace AgileConfig.Client
 
         void LoadConfigs(List<ConfigItem> configs);
 
+        [Obsolete("This event will be obsolete, please use ReLaoded event instead of.")]
         event Action<ConfigChangedArg> ConfigChanged;
+
+        event Action<ConfigReloadedArgs> ReLoaded;
 
         ILogger Logger { get; set; }
 

@@ -22,10 +22,13 @@ namespace AgileConfigMVCSample
                 //使用无参构造函数会自动读取本地appsettings.json文件的AgileConfig节点的配置
                 var configClient = new ConfigClient();
                
-                //注册配置项修改事件
-                configClient.ConfigChanged += (arg) =>
+                //注册配置项reloaded事件
+                configClient.ReLoaded += (arg) =>
                 {
-                    Console.WriteLine($"action:{arg.Action} key:{arg.Key}");
+                    foreach (var item in arg.NewConfigs)
+                    {
+                        Console.WriteLine($"{item.Key}={item.Value}");
+                    }
                 };
 
                 //使用AddAgileConfig配置一个新的IConfigurationSource

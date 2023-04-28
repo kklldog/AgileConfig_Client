@@ -152,9 +152,26 @@ namespace AgileConfig.Client
                 return _isLoadFromLocal;
             }
         }
+
+        /// <summary>
+        /// 最新的配置(全量)被加载到本地后触发。
+        /// </summary>
+        public event Action<ConfigReloadedArgs> ReLoaded
+        {
+            add
+            {
+                _options.ReLoaded += value;
+            }
+            remove
+            {
+                _options.ReLoaded -= value;
+            }
+        }
+
         /// <summary>
         /// 配置项修改事件
         /// </summary>
+        [Obsolete("ConfigChanged event will be obsolete, use ReLoaded event instead of.")]
         public event Action<ConfigChangedArg> ConfigChanged
         {
             add
@@ -628,6 +645,7 @@ namespace AgileConfig.Client
             }
         }
 
+        [Obsolete]
         private void NoticeChangedAsync(string action, string key = "")
         {
             if (_options.ConfigChanged == null)
@@ -650,6 +668,24 @@ namespace AgileConfig.Client
             key.Append(item.key);
 
             return key.ToString();
+        }
+
+        /// <summary>
+        /// 复制一个当前的配置字典
+        /// </summary>
+        /// <returns></returns>
+        private Dictionary<string, string> CopyConfigDict()
+        {
+            var dict = new Dictionary<string, string>();
+            if (this.Data != null && this.Data.Count > 0)
+            {
+                foreach (var config in this.Data)
+                {
+                    dict.Add(config.Key, config.Value);
+                }
+            }
+
+            return dict;
         }
 
         /// <summary>
@@ -678,9 +714,9 @@ namespace AgileConfig.Client
                             var respContent = await HttpUtil.GetResponseContentAsync(result);
                             LastLoadedTimeFromServer = DateTime.Now;
                             ReloadDataDictFromContent(respContent);
-                            await SendLoadedNotice();
                             WriteConfigsToLocal(respContent);
                             _isLoadFromLocal = false;
+                            await SendLoadedNoticeToServer();
 
                             Logger?.LogTrace("client load all the configs success by API: {0} , try count: {1}.", apiUrl, failCount);
                             return true;
@@ -707,6 +743,7 @@ namespace AgileConfig.Client
 
         public void LoadConfigs(List<ConfigItem> configs)
         {
+            var oldData = CopyConfigDict();
             Data.Clear();
             _configs.Clear();
             if (configs != null)
@@ -719,6 +756,8 @@ namespace AgileConfig.Client
                     Data.TryAdd(key.ToString(), value);
                 });
             }
+            var newData = CopyConfigDict();
+            this.Options.ReLoaded?.Invoke(new ConfigReloadedArgs(oldData, newData));
         }
 
         private void ReloadDataDictFromContent(string content)
@@ -731,7 +770,7 @@ namespace AgileConfig.Client
         /// send client loaded message to server
         /// </summary>
         /// <returns></returns>
-        private async Task SendLoadedNotice()
+        private async Task SendLoadedNoticeToServer()
         {
             var data = Encoding.UTF8.GetBytes("loaded");
             if (_WebsocketClient?.State == WebSocketState.Open)
@@ -803,7 +842,7 @@ namespace AgileConfig.Client
             this._isWsHeartbeating = false;
             if (this._WebsocketClient?.State == WebSocketState.Open)
             {
-                await this._WebsocketClient?.CloseAsync(WebSocketCloseStatus.Empty, null , CancellationToken.None);
+                await this._WebsocketClient?.CloseAsync(WebSocketCloseStatus.Empty, null, CancellationToken.None);
             }
             this.Status = ConnectStatus.Disconnected;
             this._WebsocketClient?.Dispose();
