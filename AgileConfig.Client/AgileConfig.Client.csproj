@@ -8,8 +8,8 @@
     <Description>A client for AgileConfig .</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kklldog/AgileConfig</PackageProjectUrl>
-    <AssemblyVersion>1.6.13</AssemblyVersion>
-    <FileVersion>1.6.13</FileVersion>
+    <AssemblyVersion>1.6.14</AssemblyVersion>
+    <FileVersion>1.6.14</FileVersion>
     <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
