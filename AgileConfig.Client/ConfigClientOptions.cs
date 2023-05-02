@@ -234,6 +234,11 @@ namespace AgileConfig.Client
 
         private static void WriteIdToLocal(string cacheDir, string appId, string serviceId)
         {
+            if (!string.IsNullOrWhiteSpace(cacheDir) && !Directory.Exists(cacheDir))
+            {
+                Directory.CreateDirectory(cacheDir);
+            }
+
             string idFileName = Path.Combine(cacheDir, $"{appId}.agileconfig.client.serviceid");
 
             File.WriteAllText(idFileName, serviceId);
