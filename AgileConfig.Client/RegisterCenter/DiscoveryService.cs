@@ -1,4 +1,5 @@
 ﻿using AgileConfig.Client.MessageHandlers;
+using AgileConfig.Client.Utils;
 using AgileConfig.Protocol;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;

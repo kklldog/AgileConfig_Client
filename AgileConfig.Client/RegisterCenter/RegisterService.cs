@@ -1,4 +1,5 @@
 ﻿using AgileConfig.Client.RegisterCenter.Heartbeats;
+using AgileConfig.Client.Utils;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Text;
