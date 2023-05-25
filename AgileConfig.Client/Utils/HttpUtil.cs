@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AgileConfig.Client
+namespace AgileConfig.Client.Utils
 {
     class HttpUtil
     {
@@ -48,7 +47,7 @@ namespace AgileConfig.Client
                 }
             }
 
-            var response = (await request.GetResponseAsync()) as HttpWebResponse;
+            var response = await request.GetResponseAsync() as HttpWebResponse;
 
             return response;
         }
@@ -82,7 +81,7 @@ namespace AgileConfig.Client
                 }
             }
 
-            var response = (await request.GetResponseAsync()) as HttpWebResponse;
+            var response = await request.GetResponseAsync() as HttpWebResponse;
 
             return response;
         }
@@ -117,7 +116,7 @@ namespace AgileConfig.Client
                 }
             }
 
-            var response = (await request.GetResponseAsync()) as HttpWebResponse;
+            var response = await request.GetResponseAsync() as HttpWebResponse;
 
             return response;
         }
