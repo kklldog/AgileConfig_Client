@@ -1,4 +1,5 @@
 ﻿using AgileConfig.Client.MessageHandlers;
+using AgileConfig.Client.Utils;
 using AgileConfig.Protocol;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -367,7 +368,7 @@ namespace AgileConfig.Client
             client.Options.SetRequestHeader("appid", AppId);
             client.Options.SetRequestHeader("env", Env);
             client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(AppId, Secret));
-            client.Options.SetRequestHeader("client-v", AssemablyUtil.GetVer());
+            client.Options.SetRequestHeader("client-v", AssemblyUtil.GetVer());
 
             var randomServer = new RandomServers(ServerNodes);
             int failCount = 0;
@@ -827,8 +828,8 @@ namespace AgileConfig.Client
 
         public string DataMd5Version()
         {
-            var keyStr = string.Join("&", Data.Keys.ToArray().OrderBy(k => k));
-            var valueStr = string.Join("&", Data.Values.ToArray().OrderBy(v => v));
+            var keyStr = string.Join("&", Data.Keys.ToArray().OrderBy(k => k, StringUtil.StringComparerWithInvariantCulture));
+            var valueStr = string.Join("&", Data.Values.ToArray().OrderBy(v => v, StringUtil.StringComparerWithInvariantCulture));
             var txt = $"{keyStr}&{valueStr}";
 
             var md5 = Encrypt.Md5(txt);

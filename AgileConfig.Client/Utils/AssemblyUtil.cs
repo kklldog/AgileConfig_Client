@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace AgileConfig.Client
+﻿namespace AgileConfig.Client.Utils
 {
-    internal class AssemablyUtil
+    internal class AssemblyUtil
     {
         public static string GetVer()
         {
-            var type = typeof(AssemablyUtil);
+            var type = typeof(AssemblyUtil);
             var ver = type.Assembly.GetName().Version;
 
             return $"{ver.Major}.{ver.Minor}.{ver.Build}";
