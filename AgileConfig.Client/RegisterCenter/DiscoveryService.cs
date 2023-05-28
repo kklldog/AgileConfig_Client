@@ -239,12 +239,12 @@ namespace AgileConfig.Client.RegisterCenter
         private string GenerateMD5(List<ServiceInfo> services)
         {
             var plain = new StringBuilder();
-            foreach (var serviceInfo in services.OrderBy(x => x.ServiceId))
+            foreach (var serviceInfo in services.OrderBy(x => x.ServiceId, StringComparer.Ordinal))
             {
                 var metaDataStr = "";
                 if (serviceInfo.MetaData != null)
                 {
-                    metaDataStr = string.Join(",", serviceInfo.MetaData.OrderBy(x => x));
+                    metaDataStr = string.Join(",", serviceInfo.MetaData.OrderBy(x => x, StringComparer.Ordinal));
                 }
                 plain.Append($"{serviceInfo.ServiceId}&{serviceInfo.ServiceName}&{serviceInfo.Ip}&{serviceInfo.Port}&{(int)serviceInfo.Status}&{metaDataStr}&");
             }

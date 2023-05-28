@@ -828,8 +828,8 @@ namespace AgileConfig.Client
 
         public string DataMd5Version()
         {
-            var keyStr = string.Join("&", Data.Keys.ToArray().OrderBy(k => k, StringComparer.InvariantCultureIgnoreCase));
-            var valueStr = string.Join("&", Data.Values.ToArray().OrderBy(v => v, StringComparer.InvariantCultureIgnoreCase));
+            var keyStr = string.Join("&", Data.Keys.ToArray().OrderBy(k => k, StringComparer.Ordinal));
+            var valueStr = string.Join("&", Data.Values.ToArray().OrderBy(v => v, StringComparer.Ordinal));
             var txt = $"{keyStr}&{valueStr}";
 
             var md5 = Encrypt.Md5(txt);
