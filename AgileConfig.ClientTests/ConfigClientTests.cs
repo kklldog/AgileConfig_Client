@@ -105,6 +105,46 @@ namespace Agile.Config.Client.Tests
             var config = items[0];
             Assert.IsNotNull(config);
             Assert.AreEqual(config.value, "b1");
+
+            configs = new List<ConfigItem>() {
+                new ConfigItem
+                {
+                    key = "a",
+                    value = "b",
+                },
+                  new ConfigItem
+                {
+                    key = "a2",
+                    value = "b2",
+                    group = "g"
+                }
+            };
+            client.LoadConfigs(configs);
+            item = client.Get("x");
+            Assert.IsNull(item);
+            item1 = client["x"];
+            Assert.IsNull(item);
+
+            items = client.GetGroup("x");
+            Assert.IsNotNull(items);
+            Assert.AreEqual(items.Count, 0);
+
+            item = client.Get("a");
+            Assert.IsNotNull(item);
+            Assert.AreEqual("b", item);
+            item1 = client["a"];
+            Assert.IsNotNull(item1);
+            Assert.AreEqual("b", item1);
+
+            item = client.Get("g:a2");
+            Assert.IsNotNull(item);
+            Assert.AreEqual("b2", item);
+            item1 = client["g:a2"];
+            Assert.IsNotNull(item1);
+
+            items = client.GetGroup("g");
+            Assert.IsNotNull(items);
+            Assert.AreEqual(1, items.Count);
         }
     }
 }

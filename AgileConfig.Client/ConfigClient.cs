@@ -4,6 +4,7 @@ using AgileConfig.Protocol;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -745,20 +746,61 @@ namespace AgileConfig.Client
         public void LoadConfigs(List<ConfigItem> configs)
         {
             var oldData = CopyConfigDict();
-            Data.Clear();
-            _configs.Clear();
-            if (configs != null)
+
+            if (configs is null)
             {
+                _data.Clear();
+                _configs.Clear(); // 清除配置，以前的逻辑，只清空数据，不清空配置，如果有重拾，数据会被恢复。
+            }
+            else
+            {
+                var data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
                 _configs = configs;
+
                 _configs.ForEach(c =>
                 {
                     var key = GenerateKey(c);
                     string value = c.value;
-                    Data.TryAdd(key.ToString(), value);
+                    data.TryAdd(key, value);
                 });
+
+                if (DataChanged(_data, data))
+                {
+                    Interlocked.Exchange(ref _data, data);
+                }
             }
             var newData = CopyConfigDict();
             this.Options.ReLoaded?.Invoke(new ConfigReloadedArgs(oldData, newData));
+        }
+
+        /// <summary>
+        /// 数据是否有变更。
+        /// </summary>
+        /// <param name="l">左节点。</param>
+        /// <param name="r">右节点。</param>
+        /// <returns>是否存在变更。</returns>
+        private bool DataChanged(IDictionary<string, string> l, IDictionary<string, string> r)
+        {
+            if (l.Count != r.Count)
+            {
+                return true;
+            }
+
+            foreach (var kv in l)
+            {
+                if (r.TryGetValue(kv.Key, out string value))
+                {
+                    if (kv.Value == value)
+                    {
+                        continue;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         private void ReloadDataDictFromContent(string content)
