@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using System.Text;
 using AgileConfig.Client;
 using AgileConfig.Protocol;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace Agile.Config.Client.Tests
 {
@@ -105,6 +108,39 @@ namespace Agile.Config.Client.Tests
             var config = items[0];
             Assert.IsNotNull(config);
             Assert.AreEqual(config.value, "b1");
+        }
+
+        [TestMethod]
+        public void HighFrequencyTest()
+        {
+            var client = new ConfigClient("1", "2", "http://", "DEV");
+
+            var source = new CancellationTokenSource();
+
+            int seed = 0;
+            Task.Run(() =>
+            {
+                while (!source.IsCancellationRequested)
+                {
+                    var configs = new List<ConfigItem>();
+                    Interlocked.Increment(ref seed);
+                    configs.Add(new ConfigItem() { key = "seed", value = seed.ToString() });
+                    client.LoadConfigs(configs);
+                    Thread.Sleep(1);
+                }
+            }, source.Token);
+
+            int times = 0;
+            int lastNumber = 0;
+            while (times++ < 100)
+            {
+                Thread.Sleep(1);
+                var val = client.Get("seed");
+                Assert.IsTrue(int.TryParse(val, out var num),$"seed val:{val}");
+                Assert.IsTrue(num >= lastNumber, $"num:{num} lastNumber:{lastNumber}");
+                lastNumber = num;
+            }
+            source.Cancel();
         }
     }
 }
