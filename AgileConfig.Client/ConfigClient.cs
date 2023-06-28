@@ -56,7 +56,7 @@ namespace AgileConfig.Client
                 return _options;
             }
         }
-
+         
         public ILogger Logger
         {
             get
@@ -745,18 +745,15 @@ namespace AgileConfig.Client
         public void LoadConfigs(List<ConfigItem> configs)
         {
             var oldData = CopyConfigDict();
-            Data.Clear();
-            _configs.Clear();
-            if (configs != null)
+            _configs = configs ?? new List<ConfigItem>(0);
+            var tempData = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            _configs.ForEach(c =>
             {
-                _configs = configs;
-                _configs.ForEach(c =>
-                {
-                    var key = GenerateKey(c);
-                    string value = c.value;
-                    Data.TryAdd(key.ToString(), value);
-                });
-            }
+                var key = GenerateKey(c);
+                string value = c.value;
+                tempData.TryAdd(key.ToString(), value);
+            });
+            _data = tempData;
             var newData = CopyConfigDict();
             this.Options.ReLoaded?.Invoke(new ConfigReloadedArgs(oldData, newData));
         }
