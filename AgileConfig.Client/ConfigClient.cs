@@ -746,7 +746,7 @@ namespace AgileConfig.Client
         {
             var oldData = CopyConfigDict();
             _configs = configs ?? new List<ConfigItem>(0);
-            var tempData = new ConcurrentDictionary<string, string>();
+            var tempData = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             _configs.ForEach(c =>
             {
                 var key = GenerateKey(c);
