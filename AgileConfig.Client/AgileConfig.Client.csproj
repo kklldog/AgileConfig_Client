@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Agile.Config.Protocol\models.cs" Link="models.cs" />
+    <Compile Include="..\Agile.Config.Protocol\Models.cs" Link="Models.cs" />
   </ItemGroup>
 
   <ItemGroup>
