@@ -184,6 +184,7 @@ namespace AgileConfig.Client
                 _options.ConfigChanged -= value;
             }
         }
+
         /// <summary>
         /// 所有的配置项最后都会转换为字典
         /// </summary>
@@ -251,6 +252,11 @@ namespace AgileConfig.Client
             }
 
             this.SetOptions(options);
+            //兼容老版本的 ConfigChanged 事件
+            this._options.ReLoaded += (_) =>
+            {
+                this._options.ConfigChanged?.Invoke(new ConfigChangedArg(ActionConst.Reload, ""));
+            };
             Instance = this;
         }
 
@@ -261,6 +267,11 @@ namespace AgileConfig.Client
 
             var options = ConfigClientOptions.FromLocalAppsettings(json);
             this.SetOptions(options);
+            //兼容老版本的 ConfigChanged 事件
+            this._options.ReLoaded += (_) =>
+            {
+                this._options.ConfigChanged?.Invoke(new ConfigChangedArg(ActionConst.Reload, ""));
+            };
             Instance = this;
         }
 
@@ -281,6 +292,11 @@ namespace AgileConfig.Client
             var options = ConfigClientOptions.FromConfiguration(configuration);
             options.Logger = logger;
             this.SetOptions(options);
+            //兼容老版本的 ConfigChanged 事件
+            this._options.ReLoaded += (_) =>
+            {
+                this._options.ConfigChanged?.Invoke(new ConfigChangedArg(ActionConst.Reload, ""));
+            };
             Instance = this;
         }
 
@@ -302,6 +318,11 @@ namespace AgileConfig.Client
             options.ENV = env;
             options.Logger = logger;
             this.SetOptions(options);
+            //兼容老版本的 ConfigChanged 事件
+            this._options.ReLoaded += (_) =>
+            {
+                this._options.ConfigChanged?.Invoke(new ConfigChangedArg(ActionConst.Reload, ""));
+            };
             Instance = this;
         }
 
@@ -574,13 +595,9 @@ namespace AgileConfig.Client
                         case ActionConst.Offline:
                             await this.DisconnectAsync();
                             Logger?.LogTrace("client offline because admin console send a command 'offline' .");
-                            NoticeChangedAsync(ActionConst.Offline);
                             break;
                         case ActionConst.Reload:
-                            if (await Load())
-                            {
-                                NoticeChangedAsync(ActionConst.Reload);
-                            };
+                            await Load();
                             break;
                         case ActionConst.Ping:
                             var localVersion = this.DataMd5Version();
@@ -644,19 +661,6 @@ namespace AgileConfig.Client
                     }
                 }
             }
-        }
-
-        [Obsolete]
-        private void NoticeChangedAsync(string action, string key = "")
-        {
-            if (_options.ConfigChanged == null)
-            {
-                return;
-            }
-            Task.Run(() =>
-            {
-                _options.ConfigChanged(new ConfigChangedArg(action, key));
-            });
         }
 
         private string GenerateKey(ConfigItem item)

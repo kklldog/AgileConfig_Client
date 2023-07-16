@@ -11,8 +11,9 @@ namespace AgileConfig.Client
         public AgileConfigProvider(IConfigClient client)
         {
             Client = client as ConfigClient;
-            Client.ConfigChanged += (arg) =>
+            Client.ReLoaded += (arg) =>
             {
+                this.Data = Client.Data;
                 this.OnReload();
             };
         }
