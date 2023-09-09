@@ -1,7 +1,6 @@
 ﻿using AgileConfig.Client;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
 
 namespace Microsoft.AspNetCore.Hosting
 {
@@ -11,12 +10,12 @@ namespace Microsoft.AspNetCore.Hosting
            this IConfigurationBuilder builder,
            IConfigClient client, Action<ConfigReloadedArgs> evt = null)
         {
-            if (evt != null)
-            {
-                client.ReLoaded += evt;
-            }
+            var configurationBuilder = builder.Add(new AgileConfigSource(client));
 
-            return builder.Add(new AgileConfigSource(client));
+            if (evt != null)
+                client.ReLoaded += evt;
+
+            return configurationBuilder;
         }
 
         public static IConfigurationBuilder AddAgileConfig(
@@ -30,12 +29,12 @@ namespace Microsoft.AspNetCore.Hosting
             this IConfigurationBuilder builder,
             IConfigClient client, Action<ConfigChangedArg> e)
         {
-            if (e != null)
-            {
-                client.ConfigChanged += e;
-            }
+            var configurationBuilder = builder.Add(new AgileConfigSource(client));
 
-            return builder.Add(new AgileConfigSource(client));
+            if (e != null)
+                client.ConfigChanged += e;
+
+            return configurationBuilder;
         }
 
         [Obsolete("ConfigChanged event will be obsolete.")]
