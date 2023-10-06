@@ -13,6 +13,8 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
+
 namespace AgileConfig.Client
 {
     public enum ConnectStatus
@@ -383,10 +385,10 @@ namespace AgileConfig.Client
         private async Task<bool> TryConnectWebsocketAsync(ClientWebSocket client)
         {
             this.Status = ConnectStatus.Connecting;
-            var clientName = string.IsNullOrEmpty(Name) ? "" : System.Web.HttpUtility.UrlEncode(Name);
-            var tag = string.IsNullOrEmpty(Tag) ? "" : System.Web.HttpUtility.UrlEncode(Tag);
+            var clientName = string.IsNullOrEmpty(Name) ? "" : HttpUtility.UrlEncode(Name);
+            var tag = string.IsNullOrEmpty(Tag) ? "" : HttpUtility.UrlEncode(Tag);
 
-            client.Options.SetRequestHeader("appid", AppId);
+            client.Options.SetRequestHeader("appid", HttpUtility.UrlEncode(AppId));
             client.Options.SetRequestHeader("env", Env);
             client.Options.SetRequestHeader("Authorization", GenerateBasicAuthorization(AppId, Secret));
             client.Options.SetRequestHeader("client-v", AssemblyUtil.GetVer());
@@ -705,12 +707,13 @@ namespace AgileConfig.Client
                 var server = randomServer.Next();
                 try
                 {
+                    var appId = HttpUtility.UrlEncode(AppId);
                     var headers = new Dictionary<string, string>()
                     {
-                       {"appid", AppId },
+                       {"appid", appId },
                        {"Authorization", GenerateBasicAuthorization(AppId, Secret) }
                     };
-                    var apiUrl = server + (server.EndsWith("/") ? "" : "/") + $"api/config/app/{AppId}?env={Env}";
+                    var apiUrl = server + (server.EndsWith("/") ? "" : "/") + $"api/config/app/{appId}?env={Env}";
                     var timeout = (HttpTimeout <= 0 ? 30 : HttpTimeout) * 1000;
                     using (var result = HttpUtil.Get(apiUrl, headers, timeout))
                     {
