@@ -6,11 +6,11 @@ namespace AgileConfig.Client
 {
     public class AgileConfigProvider : ConfigurationProvider
     {
-        private ConfigClient Client { get; }
+        private IConfigClient Client { get; }
 
         public AgileConfigProvider(IConfigClient client)
         {
-            Client = client as ConfigClient;
+            Client = client;
             Client.ReLoaded += (arg) =>
             {
                 this.Data = Client.Data;
