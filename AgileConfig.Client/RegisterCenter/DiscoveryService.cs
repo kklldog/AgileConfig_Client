@@ -206,6 +206,10 @@ namespace AgileConfig.Client.RegisterCenter
 
         private void WriteServiceInfosToLocal(string content)
         {
+            if (!_options.CacheEnabled)
+            {
+                return;
+            }
             try
             {
                 if (string.IsNullOrEmpty(content))

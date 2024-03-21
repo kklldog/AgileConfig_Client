@@ -795,6 +795,11 @@ namespace AgileConfig.Client
 
         private void WriteConfigsToLocal(string configContent)
         {
+            if (!_options.CacheEnabled)
+            {
+                return;
+            }
+
             try
             {
                 if (string.IsNullOrEmpty(configContent))

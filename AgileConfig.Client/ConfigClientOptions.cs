@@ -24,6 +24,8 @@ namespace AgileConfig.Client
 
         public int HttpTimeout { get; set; } = 100;
 
+        public bool CacheEnabled { get; set; } = true;
+
         public string CacheDirectory { get; set; }
         /// <summary>
         /// 缓存加密
@@ -135,12 +137,14 @@ namespace AgileConfig.Client
             var timeout = config["AgileConfig:httpTimeout"];
             var cacheDir = config["AgileConfig:cache:directory"] ?? "";
             var cacheEncrypt = config.GetValue("AgileConfig:cache:config_encrypt", false);
+            var cacheEnabled = config.GetValue("AgileConfig:cache:enabled", true);
             options.Name = name;
             options.Tag = tag;
             options.AppId = appId;
             options.Secret = secret;
             options.Nodes = serverNodes;
             options.ENV = string.IsNullOrEmpty(env) ? "" : env.ToUpper();
+            options.CacheEnabled = cacheEnabled;
             options.CacheDirectory = cacheDir;
             options.ConfigCacheEncrypt = cacheEncrypt;
             if (int.TryParse(timeout, out int iTimeout))
@@ -234,14 +238,21 @@ namespace AgileConfig.Client
 
         private static void WriteIdToLocal(string cacheDir, string appId, string serviceId)
         {
-            if (!string.IsNullOrWhiteSpace(cacheDir) && !Directory.Exists(cacheDir))
+            try
             {
-                Directory.CreateDirectory(cacheDir);
+                if (!string.IsNullOrWhiteSpace(cacheDir) && !Directory.Exists(cacheDir))
+                {
+                    Directory.CreateDirectory(cacheDir);
+                }
+
+                string idFileName = Path.Combine(cacheDir, $"{appId}.agileconfig.client.serviceid");
+
+                File.WriteAllText(idFileName, serviceId);
             }
-
-            string idFileName = Path.Combine(cacheDir, $"{appId}.agileconfig.client.serviceid");
-
-            File.WriteAllText(idFileName, serviceId);
+            catch (Exception e)
+            {
+                DefaultConsoleLogger.LogError(e, "Can not save serviceId to local");
+            }
         }
 
         private static ILogger _consoleLogger;
