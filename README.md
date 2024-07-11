@@ -53,6 +53,7 @@ Install-Package AgileConfig.Client
 |tag|string|连接客户端自定义标签|否|方便在agile配置中心后台对当前客户端进行查阅与管理|
 |env|string|配置中心的环境|否|通过此配置决定拉取哪个环境的配置信息；如果不配置，服务端会默认返回第一个环境的配置|
 |cache|string|客户端的配置缓存设置|否|通过此配置可对拉取到本地的配置项文件进行相关设置|
+|cache:enabled|bool|是否在本地缓存上一次拉取的配置|否|默认 true|
 |cache:directory|string|客户端的配置缓存文件存储地址配置|否|如设置了此目录则将拉取到的配置项cache文件存储到该目录，否则直接存储到站点根目录|
 |cache:config_encrypt|bool|客户端缓存文件加密设置|否|如果设置为`true`则对缓存的文件内容进行加密|
 |httpTimeout|int|http请求超时时间|否|配置 client 发送 http 请求的时候的超时时间，默认100s|
