@@ -11,7 +11,6 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -28,11 +27,10 @@ namespace AgileConfig.Client
     public class ConfigClient : IConfigClient
     {
         private ConfigClientOptions _options;
-        private int _WebsocketReconnectInterval = 5;
-        private int _WebsocketHeartbeatInterval = 30;
+        private int _websocketHeartbeatInterval = 30;
         private bool _isAutoReConnecting = false;
         private bool _isWsHeartbeating = false;
-        private ClientWebSocket _WebsocketClient;
+        private ClientWebSocket _websocketClient;
         private bool _isLoadFromLocal = false;
         private ConcurrentDictionary<string, string> _data = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private List<ConfigItem> _configs = new List<ConfigItem>();
@@ -44,22 +42,13 @@ namespace AgileConfig.Client
         /// </summary>
         public static IConfigClient Instance { get; private set; }
 
-        public ClientWebSocket WebSocket
-        {
-            get
-            {
-                return _WebsocketClient;
-            }
-        }
+        public ClientWebSocket WebSocket => _websocketClient;
 
-        public ConfigClientOptions Options
-        {
-            get
-            {
-                return _options;
-            }
-        }
-         
+        public ConfigClientOptions Options => _options;
+
+        public int ReconnectInterval => _options.ReconnectInterval;
+
+
         public ILogger Logger
         {
             get
@@ -72,63 +61,27 @@ namespace AgileConfig.Client
 
                 return _options.Logger;
             }
-            set
-            {
-                _options.Logger = value;
-            }
+            set => _options.Logger = value;
         }
         public ConnectStatus Status { get; private set; }
 
-        public string ServerNodes
-        {
-            get
-            {
-                return _options.Nodes;
-            }
-        }
-        public string AppId
-        {
-            get
-            {
-                return _options.AppId;
-            }
-        }
-        public string Secret
-        {
-            get
-            {
-                return _options.Secret;
-            }
-        }
-        public string Env
-        {
-            get
-            {
-                return _options.ENV;
-            }
-        }
+        public string ServerNodes => _options.Nodes;
+
+        public string AppId => _options.AppId;
+
+        public string Secret => _options.Secret;
+
+        public string Env => _options.ENV;
 
         public string Name
         {
-            get
-            {
-                return _options.Name;
-            }
-            set
-            {
-                _options.Name = value;
-            }
+            get => _options.Name;
+            set => _options.Name = value;
         }
         public string Tag
         {
-            get
-            {
-                return _options.Tag;
-            }
-            set
-            {
-                _options.Tag = value;
-            }
+            get => _options.Tag;
+            set => _options.Tag = value;
         }
 
         /// <summary>
@@ -136,40 +89,22 @@ namespace AgileConfig.Client
         /// </summary>
         public int HttpTimeout
         {
-            get
-            {
-                return _options.HttpTimeout;
-            }
-            set
-            {
-                _options.HttpTimeout = value;
-            }
+            get => _options.HttpTimeout;
+            set => _options.HttpTimeout = value;
         }
 
         /// <summary>
         /// 是否读取的事本地缓存的配置
         /// </summary>
-        public bool IsLoadFromLocal
-        {
-            get
-            {
-                return _isLoadFromLocal;
-            }
-        }
+        public bool IsLoadFromLocal => _isLoadFromLocal;
 
         /// <summary>
         /// 最新的配置(全量)被加载到本地后触发。
         /// </summary>
         public event Action<ConfigReloadedArgs> ReLoaded
         {
-            add
-            {
-                _options.ReLoaded += value;
-            }
-            remove
-            {
-                _options.ReLoaded -= value;
-            }
+            add => _options.ReLoaded += value;
+            remove => _options.ReLoaded -= value;
         }
 
         /// <summary>
@@ -178,14 +113,8 @@ namespace AgileConfig.Client
         [Obsolete("ConfigChanged event will be obsolete, use ReLoaded event instead of.")]
         public event Action<ConfigChangedArg> ConfigChanged
         {
-            add
-            {
-                _options.ConfigChanged += value;
-            }
-            remove
-            {
-                _options.ConfigChanged -= value;
-            }
+            add => _options.ConfigChanged += value;
+            remove => _options.ConfigChanged -= value;
         }
 
         /// <summary>
@@ -352,25 +281,25 @@ namespace AgileConfig.Client
         {
             if (this.Status == ConnectStatus.Connected
                 || this.Status == ConnectStatus.Connecting
-                || _WebsocketClient?.State == WebSocketState.Open)
+                || _websocketClient?.State == WebSocketState.Open)
             {
                 return true;
             }
             else
             {
-                _WebsocketClient?.Abort();
-                _WebsocketClient?.Dispose();
-                _WebsocketClient = default;
+                _websocketClient?.Abort();
+                _websocketClient?.Dispose();
+                _websocketClient = default;
                 this.Status = ConnectStatus.Disconnected;
             }
 
-            if (_WebsocketClient == null)
+            if (_websocketClient == null)
             {
                 this.Status = ConnectStatus.Connecting;
-                _WebsocketClient = new ClientWebSocket();
+                _websocketClient = new ClientWebSocket();
             }
 
-            var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
+            var connected = await TryConnectWebsocketAsync(_websocketClient).ConfigureAwait(false);
             await Load();//不管websocket是否成功，都去拉一次配置
             if (connected)
             {
@@ -481,16 +410,16 @@ namespace AgileConfig.Client
             {
                 while (_isAutoReConnecting)
                 {
-                    await Task.Delay(1000 * _WebsocketReconnectInterval).ConfigureAwait(false);
+                    await Task.Delay(1000 * ReconnectInterval).ConfigureAwait(false);
 
-                    if (_WebsocketClient?.State == WebSocketState.Open)
+                    if (_websocketClient?.State == WebSocketState.Open)
                     {
                         continue;
                     }
                     try
                     {
-                        _WebsocketClient?.Abort();
-                        _WebsocketClient?.Dispose();
+                        _websocketClient?.Abort();
+                        _websocketClient?.Dispose();
                         this.Status = ConnectStatus.Disconnected;
 
                         if (!_isAutoReConnecting)
@@ -498,8 +427,8 @@ namespace AgileConfig.Client
                             break;
                         }
 
-                        _WebsocketClient = new ClientWebSocket();
-                        var connected = await TryConnectWebsocketAsync(_WebsocketClient).ConfigureAwait(false);
+                        _websocketClient = new ClientWebSocket();
+                        var connected = await TryConnectWebsocketAsync(_websocketClient).ConfigureAwait(false);
                         if (connected)
                         {
                             await Load();
@@ -538,13 +467,13 @@ namespace AgileConfig.Client
                 var data = Encoding.UTF8.GetBytes("ping");
                 while (_isWsHeartbeating)
                 {
-                    await Task.Delay(1000 * _WebsocketHeartbeatInterval).ConfigureAwait(false); ;
-                    if (_WebsocketClient?.State == WebSocketState.Open)
+                    await Task.Delay(1000 * _websocketHeartbeatInterval).ConfigureAwait(false); ;
+                    if (_websocketClient?.State == WebSocketState.Open)
                     {
                         try
                         {
                             //这里由于多线程的问题，WebsocketClient有可能在上一个if判断成功后被置空或者断开，所以需要try一下避免线程退出
-                            await _WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
+                            await _websocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
                                     CancellationToken.None).ConfigureAwait(false);
                             Logger?.LogTrace("client send 'ping' to server by websocket .");
                         }
@@ -564,13 +493,13 @@ namespace AgileConfig.Client
         {
             Task.Factory.StartNew(async () =>
             {
-                while (_WebsocketClient?.State == WebSocketState.Open)
+                while (_websocketClient?.State == WebSocketState.Open)
                 {
                     ArraySegment<Byte> buffer = new ArraySegment<byte>(new Byte[1024 * 2]);
                     WebSocketReceiveResult result = null;
                     try
                     {
-                        result = await _WebsocketClient.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
+                        result = await _websocketClient.ReceiveAsync(buffer, CancellationToken.None).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -779,11 +708,11 @@ namespace AgileConfig.Client
         private async Task SendLoadedNoticeToServer()
         {
             var data = Encoding.UTF8.GetBytes("loaded");
-            if (_WebsocketClient?.State == WebSocketState.Open)
+            if (_websocketClient?.State == WebSocketState.Open)
             {
                 try
                 {
-                    await _WebsocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
+                    await _websocketClient.SendAsync(new ArraySegment<byte>(data, 0, data.Length), WebSocketMessageType.Text, true,
                             CancellationToken.None).ConfigureAwait(false);
                     Logger?.LogTrace("client send 'loaded' to server by websocket .");
                 }
@@ -851,13 +780,13 @@ namespace AgileConfig.Client
         {
             this._isAutoReConnecting = false;
             this._isWsHeartbeating = false;
-            if (this._WebsocketClient?.State == WebSocketState.Open)
+            if (this._websocketClient?.State == WebSocketState.Open)
             {
-                await this._WebsocketClient?.CloseAsync(WebSocketCloseStatus.Empty, null, CancellationToken.None);
+                await this._websocketClient?.CloseAsync(WebSocketCloseStatus.Empty, null, CancellationToken.None);
             }
             this.Status = ConnectStatus.Disconnected;
-            this._WebsocketClient?.Dispose();
-            this._WebsocketClient = null;
+            this._websocketClient?.Dispose();
+            this._websocketClient = null;
 
             return true;
         }

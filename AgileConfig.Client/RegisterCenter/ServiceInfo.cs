@@ -38,6 +38,9 @@ namespace AgileConfig.Client.RegisterCenter
         public string HeartBeatMode { get; set; } = "client";
 
         public int Interval { get; set; } = 30;
+
+        public int ReregisterInterval { get; set; } = 5;
+
     }
 
     public static class ServiceInfoExtension

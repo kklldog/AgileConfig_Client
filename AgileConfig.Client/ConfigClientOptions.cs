@@ -24,6 +24,8 @@ namespace AgileConfig.Client
 
         public int HttpTimeout { get; set; } = 100;
 
+        public int ReconnectInterval { get; set; } = 5;
+
         public bool CacheEnabled { get; set; } = true;
 
         public string CacheDirectory { get; set; }
@@ -138,6 +140,8 @@ namespace AgileConfig.Client
             var cacheDir = config["AgileConfig:cache:directory"] ?? "";
             var cacheEncrypt = config.GetValue("AgileConfig:cache:config_encrypt", false);
             var cacheEnabled = config.GetValue("AgileConfig:cache:enabled", true);
+            var reconnectInterval = config.GetValue("AgileConfig:reconnectInterval", 5);
+
             options.Name = name;
             options.Tag = tag;
             options.AppId = appId;
@@ -147,6 +151,8 @@ namespace AgileConfig.Client
             options.CacheEnabled = cacheEnabled;
             options.CacheDirectory = cacheDir;
             options.ConfigCacheEncrypt = cacheEncrypt;
+            options.ReconnectInterval = reconnectInterval;
+
             if (int.TryParse(timeout, out int iTimeout))
             {
                 options.HttpTimeout = iTimeout;
@@ -190,7 +196,8 @@ namespace AgileConfig.Client
             var alarmUrl = config["AgileConfig:serviceRegister:alarmUrl"];
             var checkUrl = config["AgileConfig:serviceRegister:heartbeat:url"];
             var mode = config["AgileConfig:serviceRegister:heartbeat:mode"];
-            var heartbeatInverval = config["AgileConfig:serviceRegister:heartbeat:interval"];
+            var heartbeatInverval = config.GetValue("AgileConfig:serviceRegister:heartbeat:interval", 30);
+            var reregisterInterval = config.GetValue("AgileConfig:serviceRegister:reregisterInterval", 5);
             var metaData = new List<string>();
             config.GetSection("AgileConfig:serviceRegister:metaData").Bind(metaData);
             options.RegisterInfo.ServiceId = serviceId;
@@ -198,6 +205,9 @@ namespace AgileConfig.Client
             options.RegisterInfo.Ip = ip;
             options.RegisterInfo.CheckUrl = checkUrl;
             options.RegisterInfo.AlarmUrl = alarmUrl;
+            options.RegisterInfo.ReregisterInterval = reregisterInterval;
+            options.RegisterInfo.Interval = heartbeatInverval;
+
             if (string.IsNullOrWhiteSpace(mode))
             {
                 mode = "client";
@@ -207,10 +217,6 @@ namespace AgileConfig.Client
             if (int.TryParse(port, out int iport))
             {
                 options.RegisterInfo.Port = iport;
-            }
-            if (int.TryParse(heartbeatInverval, out int IheartbeatInverval))
-            {
-                options.RegisterInfo.Interval = IheartbeatInverval;
             }
 
             return options;

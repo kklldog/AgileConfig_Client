@@ -164,7 +164,7 @@ namespace AgileConfig.Client.RegisterCenter
                     {
                         break;
                     }
-                    await Task.Delay(5000);
+                    await Task.Delay(_options.RegisterInfo.ReregisterInterval * 1000);
                 }
             }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
 
