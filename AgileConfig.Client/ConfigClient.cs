@@ -3,7 +3,6 @@ using AgileConfig.Client.Utils;
 using AgileConfig.Protocol;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,6 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -767,7 +768,7 @@ namespace AgileConfig.Client
 
         private void ReloadDataDictFromContent(string content)
         {
-            var configs = JsonConvert.DeserializeObject<List<ConfigItem>>(content);
+            var configs = JsonSerializer.Deserialize<List<ConfigItem>>(content);
             LoadConfigs(configs);
         }
 

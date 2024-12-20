@@ -1,8 +1,5 @@
 ﻿using AgileConfig.Protocol;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Text.Json;
 
 namespace AgileConfig.Client.MessageHandlers
 {
@@ -15,7 +12,7 @@ namespace AgileConfig.Client.MessageHandlers
                 return false;
             }
 
-            var action = JsonConvert.DeserializeObject<ActionMessage>(message);
+            var action = JsonSerializer.Deserialize<ActionMessage>(message);
             if (action == null)
             {
                 return false;

@@ -1,8 +1,8 @@
 ﻿using AgileConfig.Client.RegisterCenter.Heartbeats;
 using AgileConfig.Client.Utils;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -82,7 +82,7 @@ namespace AgileConfig.Client.RegisterCenter
                 return;
             }
 
-            var json = JsonConvert.SerializeObject(new
+            var json = JsonSerializer.Serialize(new
             {
                 serviceId = _options.RegisterInfo.ServiceId,
                 serviceName = _options.RegisterInfo.ServiceName
@@ -102,7 +102,7 @@ namespace AgileConfig.Client.RegisterCenter
                     if (resp.StatusCode == System.Net.HttpStatusCode.OK)
                     {
                         Registered = false;
-                        _uniqueId = JsonConvert.DeserializeObject<RegisterResult>(content).uniqueId;
+                        _uniqueId = JsonSerializer.Deserialize<RegisterResult>(content).uniqueId;
 
                         _logger.LogInformation($"UNREGISTER service info to server {host} success , uniqueId:{_uniqueId} serviceId:{_options.RegisterInfo.ServiceId} serviceName:{_options.RegisterInfo.ServiceName}");
                         return;
@@ -127,7 +127,7 @@ namespace AgileConfig.Client.RegisterCenter
 
             Task.Factory.StartNew(async () =>
             {
-                var json = JsonConvert.SerializeObject(_options.RegisterInfo);
+                var json = JsonSerializer.Serialize(_options.RegisterInfo);
                 var data = Encoding.UTF8.GetBytes(json);
 
                 while (!token.IsCancellationRequested)
@@ -148,7 +148,7 @@ namespace AgileConfig.Client.RegisterCenter
                                 if (resp.StatusCode == System.Net.HttpStatusCode.OK)
                                 {
                                     Registered = true;
-                                    _uniqueId = JsonConvert.DeserializeObject<RegisterResult>(content).uniqueId;
+                                    _uniqueId = JsonSerializer.Deserialize<RegisterResult>(content).uniqueId;
 
                                     _logger.LogInformation($"REGISTER service info to server {host} success , uniqueId:{_uniqueId} serviceId:{_options.RegisterInfo.ServiceId} serviceName:{_options.RegisterInfo.ServiceName}");
                                     break;

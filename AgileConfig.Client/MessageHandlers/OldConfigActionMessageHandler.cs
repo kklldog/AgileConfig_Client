@@ -1,8 +1,8 @@
 ﻿using AgileConfig.Protocol;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace AgileConfig.Client.MessageHandlers
@@ -21,7 +21,7 @@ namespace AgileConfig.Client.MessageHandlers
 
             try
             {
-                var action = JsonConvert.DeserializeObject<ActionMessage>(message);
+                var action = JsonSerializer.Deserialize<ActionMessage>(message);
                 if (action == null)
                 {
                     return false;
@@ -40,7 +40,7 @@ namespace AgileConfig.Client.MessageHandlers
 
         public static async Task Handle(string message, ConfigClient client)
         {
-            var action = JsonConvert.DeserializeObject<ActionMessage>(message);
+            var action = JsonSerializer.Deserialize<ActionMessage>(message);
             if (action != null)
             {
                 await client.TryHandleAction(action);

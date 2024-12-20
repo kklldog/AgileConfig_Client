@@ -1,9 +1,9 @@
 ﻿using AgileConfig.Client.Utils;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace AgileConfig.Client.RegisterCenter.Heartbeats
@@ -25,7 +25,7 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
             {
                 uniqueId = serviceUniqueId
             };
-            var json = JsonConvert.SerializeObject(param);
+            var json = JsonSerializer.Serialize(param);
             var data = Encoding.UTF8.GetBytes(json);
             while (!random.IsComplete)
             {   //随机一个节点尝试移除

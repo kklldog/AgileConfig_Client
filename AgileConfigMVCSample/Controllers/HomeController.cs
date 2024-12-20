@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using AgileConfig.Client;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -10,7 +8,7 @@ using AgileConfigMVCSample.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using AgileConfig.Client.RegisterCenter;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace AgileConfigMVCSample.Controllers
 {
@@ -136,7 +134,7 @@ namespace AgileConfigMVCSample.Controllers
                 services = _discoveryService.GetByServiceName(serviceName).ToList();
             }
 
-            var json = JsonConvert.SerializeObject(services);
+            var json = JsonSerializer.Serialize(services);
             ViewBag.services = json;
 
             return View("Services");

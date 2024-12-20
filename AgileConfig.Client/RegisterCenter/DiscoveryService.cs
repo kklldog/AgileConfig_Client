@@ -2,12 +2,12 @@
 using AgileConfig.Client.Utils;
 using AgileConfig.Protocol;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace AgileConfig.Client.RegisterCenter
@@ -52,7 +52,7 @@ namespace AgileConfig.Client.RegisterCenter
                 {
                     if (RegisterCenterActionMessageHandler.Hit(str))
                     {
-                        var act = JsonConvert.DeserializeObject<ActionMessage>(str);
+                        var act = JsonSerializer.Deserialize<ActionMessage>(str);
                         if (act == null)
                         {
                             return;
@@ -143,7 +143,7 @@ namespace AgileConfig.Client.RegisterCenter
                         var content = await HttpUtil.GetResponseContentAsync(resp);
                         if (!string.IsNullOrEmpty(content))
                         {
-                            var result = JsonConvert.DeserializeObject<List<ServiceInfo>>(content);
+                            var result = JsonSerializer.Deserialize<List<ServiceInfo>>(content);
                             if (result != null)
                             {
                                 this._isLoadFromLocal = false;
@@ -181,7 +181,7 @@ namespace AgileConfig.Client.RegisterCenter
             var fileContent = ReadServiceInfosContentFromLocal();
             if (!string.IsNullOrEmpty(fileContent))
             {
-                var result = JsonConvert.DeserializeObject<List<ServiceInfo>>(fileContent);
+                var result = JsonSerializer.Deserialize<List<ServiceInfo>>(fileContent);
                 if (result != null)
                 {
                     this._services = result;
