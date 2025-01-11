@@ -102,7 +102,7 @@ namespace AgileConfig.Client.RegisterCenter
                     if (resp.StatusCode == System.Net.HttpStatusCode.OK)
                     {
                         Registered = false;
-                        _uniqueId = JsonSerializer.Deserialize<RegisterResult>(content).uniqueId;
+                        _uniqueId = JsonSerializer.Deserialize<RegisterResult>(content, MsJsonSerializerOption.Default).uniqueId;
 
                         _logger.LogInformation($"UNREGISTER service info to server {host} success , uniqueId:{_uniqueId} serviceId:{_options.RegisterInfo.ServiceId} serviceName:{_options.RegisterInfo.ServiceName}");
                         return;
@@ -148,7 +148,7 @@ namespace AgileConfig.Client.RegisterCenter
                                 if (resp.StatusCode == System.Net.HttpStatusCode.OK)
                                 {
                                     Registered = true;
-                                    _uniqueId = JsonSerializer.Deserialize<RegisterResult>(content).uniqueId;
+                                    _uniqueId = JsonSerializer.Deserialize<RegisterResult>(content, MsJsonSerializerOption.Default).uniqueId;
 
                                     _logger.LogInformation($"REGISTER service info to server {host} success , uniqueId:{_uniqueId} serviceId:{_options.RegisterInfo.ServiceId} serviceName:{_options.RegisterInfo.ServiceName}");
                                     break;

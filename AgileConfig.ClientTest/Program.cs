@@ -55,6 +55,18 @@ namespace AgileConfigClientTest
                     var service = new RegisterHostedService(regService, lf);
 
                     await service.StartAsync(CancellationToken.None);
+
+                    await Task.Run(async () =>
+                    {
+                        while (true)
+                        {
+                            await Task.Delay(5000);
+                            foreach (var service in disService.Services)
+                            {
+                                Console.WriteLine("{0} : {1}", service.ServiceId, service.ServiceName);
+                            }
+                        }
+                    });
                 }
                 catch (Exception ex)
                 {

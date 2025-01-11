@@ -697,7 +697,7 @@ namespace AgileConfig.Client
 
         private void ReloadDataDictFromContent(string content)
         {
-            var configs = JsonSerializer.Deserialize<List<ConfigItem>>(content);
+            var configs = JsonSerializer.Deserialize<List<ConfigItem>>(content, MsJsonSerializerOption.Default);
             LoadConfigs(configs);
         }
 

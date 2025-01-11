@@ -52,7 +52,7 @@ namespace AgileConfig.Client.RegisterCenter
                 {
                     if (RegisterCenterActionMessageHandler.Hit(str))
                     {
-                        var act = JsonSerializer.Deserialize<ActionMessage>(str);
+                        var act = JsonSerializer.Deserialize<ActionMessage>(str, MsJsonSerializerOption.Default);
                         if (act == null)
                         {
                             return;
@@ -143,7 +143,7 @@ namespace AgileConfig.Client.RegisterCenter
                         var content = await HttpUtil.GetResponseContentAsync(resp);
                         if (!string.IsNullOrEmpty(content))
                         {
-                            var result = JsonSerializer.Deserialize<List<ServiceInfo>>(content);
+                            var result = JsonSerializer.Deserialize<List<ServiceInfo>>(content, MsJsonSerializerOption.Default);
                             if (result != null)
                             {
                                 this._isLoadFromLocal = false;
@@ -154,7 +154,8 @@ namespace AgileConfig.Client.RegisterCenter
                                 ReLoaded?.Invoke();
                             }
                         }
-                        break;
+                        break; 
+                        //[{ "serviceId":"123","serviceName":"213","ip":"www.baidu.com","port":null,"metaData":[],"status":1},{ "serviceId":"http://localhost:5000/","serviceName":"http://localhost:5000/","ip":"http://localhost:5000/","port":null,"metaData":[],"status":1},{ "serviceId":"test_app_service_02","serviceName":"test_client","ip":"127.0.0.1","port":5002,"metaData":["this is a test client"],"status":1}]
                     }
                     else
                     {
@@ -181,7 +182,7 @@ namespace AgileConfig.Client.RegisterCenter
             var fileContent = ReadServiceInfosContentFromLocal();
             if (!string.IsNullOrEmpty(fileContent))
             {
-                var result = JsonSerializer.Deserialize<List<ServiceInfo>>(fileContent);
+                var result = JsonSerializer.Deserialize<List<ServiceInfo>>(fileContent, MsJsonSerializerOption.Default);
                 if (result != null)
                 {
                     this._services = result;

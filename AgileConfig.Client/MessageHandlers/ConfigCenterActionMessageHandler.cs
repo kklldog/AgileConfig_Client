@@ -1,4 +1,5 @@
-﻿using AgileConfig.Protocol;
+﻿using AgileConfig.Client.Utils;
+using AgileConfig.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -21,7 +22,7 @@ namespace AgileConfig.Client.MessageHandlers
 
             try
             {
-                var action = JsonSerializer.Deserialize<ActionMessage>(message);
+                var action = JsonSerializer.Deserialize<ActionMessage>(message, MsJsonSerializerOption.Default);
                 if (action == null)
                 {
                     return false;
@@ -38,7 +39,7 @@ namespace AgileConfig.Client.MessageHandlers
 
         public static async Task Handle(string message, ConfigClient client)
         {
-            var action = JsonSerializer.Deserialize<ActionMessage>(message);
+            var action = JsonSerializer.Deserialize<ActionMessage>(message, MsJsonSerializerOption.Default);
             if (action != null)
             {
                 await client.TryHandleAction(action);

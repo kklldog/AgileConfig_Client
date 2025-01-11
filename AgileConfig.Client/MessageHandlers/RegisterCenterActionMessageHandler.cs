@@ -1,4 +1,5 @@
-﻿using AgileConfig.Protocol;
+﻿using AgileConfig.Client.Utils;
+using AgileConfig.Protocol;
 using System.Text.Json;
 
 namespace AgileConfig.Client.MessageHandlers
@@ -12,7 +13,7 @@ namespace AgileConfig.Client.MessageHandlers
                 return false;
             }
 
-            var action = JsonSerializer.Deserialize<ActionMessage>(message);
+            var action = JsonSerializer.Deserialize<ActionMessage>(message, MsJsonSerializerOption.Default);
             if (action == null)
             {
                 return false;
