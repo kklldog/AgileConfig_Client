@@ -36,4 +36,9 @@ namespace AgileConfig.Protocol
         public const string RegisterCenter = "r";
         public const string ConfigCenter = "c";
     }
+
+    public class Const
+    {
+        public const string HeaderKeyPublishTimeLineId = "publish-time-line-id";
+    }
 }

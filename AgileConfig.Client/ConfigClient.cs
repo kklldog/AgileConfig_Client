@@ -127,6 +127,8 @@ namespace AgileConfig.Client
             get; private set;
         }
 
+        public string CurrentPublishTimeLineId { get; private set; }
+
         public string this[string key]
         {
             get
@@ -390,6 +392,7 @@ namespace AgileConfig.Client
             {
                 ReloadDataDictFromContent(fileContent);
                 _isLoadFromLocal = true;
+                CurrentPublishTimeLineId = "";
                 Logger?.LogTrace("client load all configs from local file .");
             }
         }
@@ -467,7 +470,7 @@ namespace AgileConfig.Client
                 var data = Encoding.UTF8.GetBytes("ping");
                 while (_isWsHeartbeating)
                 {
-                    await Task.Delay(1000 * _websocketHeartbeatInterval).ConfigureAwait(false); ;
+                    await Task.Delay(1000 * _websocketHeartbeatInterval).ConfigureAwait(false);
                     if (_websocketClient?.State == WebSocketState.Open)
                     {
                         try
@@ -532,9 +535,11 @@ namespace AgileConfig.Client
                             await Load();
                             break;
                         case ActionConst.Ping:
-                            var localVersion = this.DataMd5Version();
+                            var localVersion = GetLocalVersion();
                             if (action.Data != localVersion)
                             {
+                                Logger?.LogTrace("local version is {0} , server version is {1} , there are different so try to load from server again .", localVersion, action.Data);
+
                                 await Load();
                             }
                             break;
@@ -645,11 +650,13 @@ namespace AgileConfig.Client
                     };
                     var apiUrl = server + (server.EndsWith("/") ? "" : "/") + $"api/config/app/{appId}?env={Env}";
                     var timeout = (HttpTimeout <= 0 ? 30 : HttpTimeout) * 1000;
-                    using (var result = HttpUtil.Get(apiUrl, headers, timeout))
+                    using (var response = HttpUtil.Get(apiUrl, headers, timeout))
                     {
-                        if (result.StatusCode == System.Net.HttpStatusCode.OK)
+                        if (response.StatusCode == System.Net.HttpStatusCode.OK)
                         {
-                            var respContent = await HttpUtil.GetResponseContentAsync(result);
+                            CurrentPublishTimeLineId = response.Headers.Get(Const.HeaderKeyPublishTimeLineId);
+
+                            var respContent = await HttpUtil.GetResponseContentAsync(response);
                             LastLoadedTimeFromServer = DateTime.Now;
                             ReloadDataDictFromContent(respContent);
                             WriteConfigsToLocal(respContent);
@@ -774,6 +781,16 @@ namespace AgileConfig.Client
             var md5 = Encrypt.Md5(txt);
 
             return md5;
+        }
+
+        private string GetLocalVersion()
+        {
+            if (string.IsNullOrEmpty(CurrentPublishTimeLineId))
+            {
+                return DataMd5Version();
+            }
+
+            return CurrentPublishTimeLineId;
         }
 
         public async Task<bool> DisconnectAsync()
