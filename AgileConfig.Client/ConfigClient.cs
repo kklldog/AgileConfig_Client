@@ -663,7 +663,7 @@ namespace AgileConfig.Client
                             _isLoadFromLocal = false;
                             await SendLoadedNoticeToServer();
 
-                            Logger?.LogTrace("client load all the configs success by API: {0} , try count: {1}.", apiUrl, failCount);
+                            Logger?.LogTrace("client load all the configs success by API: {api}, publishTimeLineId: {publishTimeLineId} , try count: {count}.", apiUrl, CurrentPublishTimeLineId, failCount);
                             return true;
                         }
                         else
