@@ -70,6 +70,41 @@ namespace AgileConfig.Client
             return rootDir;
         }
 
+        /// <summary>
+        /// Build configuration with environment-specific json files support.
+        /// Loads appsettings.json first, then appsettings.{Environment}.json if exists.
+        /// Environment is determined by ASPNETCORE_ENVIRONMENT or DOTNET_ENVIRONMENT environment variables.
+        /// </summary>
+        /// <param name="rootDir">The root directory containing the configuration files.</param>
+        /// <param name="json">The base json file name (e.g., "appsettings.json").</param>
+        /// <returns>The built IConfiguration instance.</returns>
+        private static IConfiguration BuildConfiguration(string rootDir, string json)
+        {
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(rootDir)
+                .AddJsonFile(json, optional: false, reloadOnChange: false);
+
+            // Get environment from ASPNETCORE_ENVIRONMENT or DOTNET_ENVIRONMENT
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                              ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+
+            if (!string.IsNullOrWhiteSpace(environment))
+            {
+                // Build environment-specific json file name
+                // e.g., appsettings.json -> appsettings.Development.json
+                var jsonExtension = Path.GetExtension(json);
+                var jsonWithoutExtension = Path.GetFileNameWithoutExtension(json);
+                var envJsonFile = $"{jsonWithoutExtension}.{environment}{jsonExtension}";
+
+                builder.AddJsonFile(envJsonFile, optional: true, reloadOnChange: false);
+            }
+
+            builder.AddEnvironmentVariables()
+                   .AddCommandLine(Environment.GetCommandLineArgs());
+
+            return builder.Build();
+        }
+
 
         public static ConfigClientOptions FromLocalAppsettingsOrEmpty(string json = "appsettings.json")
         {
@@ -78,12 +113,7 @@ namespace AgileConfig.Client
 
             var rootDir = EnsureCurrentDirectory(json);
 
-            var localconfig = new ConfigurationBuilder()
-                             .SetBasePath(rootDir)
-                             .AddJsonFile(json)
-                             .AddEnvironmentVariables()
-                             .AddCommandLine(Environment.GetCommandLineArgs())
-                             .Build();
+            var localconfig = BuildConfiguration(rootDir, json);
 
             var configSection = localconfig.GetSection("AgileConfig");
             if (!configSection.Exists())
@@ -101,12 +131,7 @@ namespace AgileConfig.Client
 
             var rootDir = EnsureCurrentDirectory(json);
 
-            var localconfig = new ConfigurationBuilder()
-                             .SetBasePath(rootDir)
-                             .AddJsonFile(json)
-                             .AddEnvironmentVariables()
-                             .AddCommandLine(Environment.GetCommandLineArgs())
-                             .Build();
+            var localconfig = BuildConfiguration(rootDir, json);
 
             return FromConfiguration(localconfig);
         }
