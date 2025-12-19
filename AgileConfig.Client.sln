@@ -31,6 +31,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinServiceSample", "WinServ
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgileConfigDiscoveryServiceSample", "AgileConfigDiscoveryServiceSample\AgileConfigDiscoveryServiceSample.csproj", "{D500DE6F-29EC-4913-9301-1EE788495FEF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgileWorkerServiceNET8", "AgileWorkerServiceNET8\AgileWorkerServiceNET8.csproj", "{15A5ACE3-283E-4747-9F5C-97C2D914C71B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +87,10 @@ Global
 		{D500DE6F-29EC-4913-9301-1EE788495FEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D500DE6F-29EC-4913-9301-1EE788495FEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D500DE6F-29EC-4913-9301-1EE788495FEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15A5ACE3-283E-4747-9F5C-97C2D914C71B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15A5ACE3-283E-4747-9F5C-97C2D914C71B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15A5ACE3-283E-4747-9F5C-97C2D914C71B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15A5ACE3-283E-4747-9F5C-97C2D914C71B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -100,6 +106,7 @@ Global
 		{C98592D8-CA81-462B-96AB-8C9B6FF780B0} = {CE91E81A-309C-42A9-B7C8-69347A8E8570}
 		{0F68A168-F446-4C48-9896-5AA4A509574F} = {CE91E81A-309C-42A9-B7C8-69347A8E8570}
 		{D500DE6F-29EC-4913-9301-1EE788495FEF} = {CE91E81A-309C-42A9-B7C8-69347A8E8570}
+		{15A5ACE3-283E-4747-9F5C-97C2D914C71B} = {CE91E81A-309C-42A9-B7C8-69347A8E8570}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9F4BE340-448F-4E99-A0BF-954634C87F42}
