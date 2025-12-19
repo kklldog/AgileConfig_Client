@@ -6,6 +6,51 @@ AgileConfig client implemented with .NET Standard 2.0.
 ![Nuget](https://img.shields.io/nuget/v/agileconfig.client)
 ![Nuget](https://img.shields.io/nuget/dt/agileconfig.client?label=download)
 
+## 项目概述 / Project Overview
+
+AgileConfig_Client 是 AgileConfig 分布式配置中心的 .NET 客户端库，基于 .NET Standard 2.0 实现，可以在 .NET Core、.NET Framework 和 .NET 5+ 应用中使用。
+
+**AgileConfig_Client** is the official .NET client library for the AgileConfig distributed configuration center. Built on .NET Standard 2.0, it provides seamless integration with .NET Core, .NET Framework, and .NET 5+ applications.
+
+### 核心功能 / Key Features
+
+- **🔧 配置管理 / Configuration Management**
+  - 集中式配置管理，支持动态配置更新
+  - 支持多种配置读取方式（IConfiguration、IOptions、ConfigClient）
+  - 本地配置缓存，支持缓存加密
+  - Centralized configuration management with dynamic updates
+  - Multiple access patterns (IConfiguration, IOptions, ConfigClient)
+  - Local configuration caching with optional encryption
+
+- **🔍 服务注册与发现 / Service Registration & Discovery**
+  - 自动服务注册，支持多实例部署
+  - 灵活的心跳机制（客户端上报 / 服务端探测）
+  - 服务健康检查和告警通知
+  - Automatic service registration for multi-instance deployments
+  - Flexible heartbeat modes (client-side or server-side)
+  - Health checks with alarm notifications
+
+- **🎯 应用场景 / Use Cases**
+  - 微服务架构的配置统一管理
+  - 多环境配置隔离（开发、测试、生产）
+  - 服务发现和负载均衡
+  - 配置热更新，无需重启应用
+  - Unified configuration management for microservices
+  - Environment-based configuration isolation (dev, test, prod)
+  - Service discovery and load balancing
+  - Hot configuration updates without application restart
+
+### 技术特点 / Technical Highlights
+
+- ✅ 基于 .NET Standard 2.0，跨平台支持
+- ✅ 与 ASP.NET Core 配置系统无缝集成
+- ✅ 支持多节点高可用部署
+- ✅ 提供丰富的示例项目（MVC、Console、WPF、Windows Service）
+- ✅ Built on .NET Standard 2.0 with cross-platform support
+- ✅ Seamless integration with ASP.NET Core configuration system
+- ✅ High availability with multi-node support
+- ✅ Rich sample projects (MVC, Console, WPF, Windows Service)
+
 ## Using the client
 
 ### Install the client
