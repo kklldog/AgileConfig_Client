@@ -14,31 +14,22 @@ AgileConfig_Client 是 AgileConfig 分布式配置中心的 .NET 客户端库，
 
 ### 核心功能 / Key Features
 
-- **🔧 配置管理 / Configuration Management**
-  - 集中式配置管理，支持动态配置更新
-  - 支持多种配置读取方式（IConfiguration、IOptions、ConfigClient）
-  - 本地配置缓存，支持缓存加密
-  - Centralized configuration management with dynamic updates
-  - Multiple access patterns (IConfiguration, IOptions, ConfigClient)
-  - Local configuration caching with optional encryption
+#### 🔧 配置管理 / Configuration Management
+- 集中式配置管理，支持动态配置更新 / Centralized configuration management with dynamic updates
+- 支持多种配置读取方式（IConfiguration、IOptions、ConfigClient）/ Multiple access patterns (IConfiguration, IOptions, ConfigClient)
+- 本地配置缓存，支持缓存加密 / Local configuration caching with optional encryption
 
-- **🔍 服务注册与发现 / Service Registration & Discovery**
-  - 自动服务注册，支持多实例部署
-  - 灵活的心跳机制（客户端上报 / 服务端探测）
-  - 服务健康检查和告警通知
-  - Automatic service registration for multi-instance deployments
-  - Flexible heartbeat modes (client-side or server-side)
-  - Health checks with alarm notifications
+#### 🔍 服务注册与发现 / Service Registration & Discovery
+- 自动服务注册，支持多实例部署 / Automatic service registration for multi-instance deployments
+- 灵活的心跳机制（客户端上报 / 服务端探测）/ Flexible heartbeat modes (client-side or server-side)
+- 服务健康检查和告警通知 / Health checks with alarm notifications
 
-- **🎯 应用场景 / Use Cases**
-  - 微服务架构的配置统一管理
-  - 多环境配置隔离（开发、测试、生产）
-  - 服务发现和负载均衡
-  - 配置热更新，无需重启应用
-  - Unified configuration management for microservices
-  - Environment-based configuration isolation (dev, test, prod)
-  - Service discovery and load balancing
-  - Hot configuration updates without application restart
+### 应用场景 / Use Cases
+
+- 微服务架构的配置统一管理 / Unified configuration management for microservices
+- 多环境配置隔离（开发、测试、生产）/ Environment-based configuration isolation (dev, test, prod)
+- 服务发现和负载均衡 / Service discovery and load balancing
+- 配置热更新，无需重启应用 / Hot configuration updates without application restart
 
 ### 技术特点 / Technical Highlights
 
