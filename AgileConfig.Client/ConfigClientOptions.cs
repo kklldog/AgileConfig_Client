@@ -261,26 +261,31 @@ namespace AgileConfig.Client
             }
         }
 
+        private static readonly object _consoleLoggerLock = new object();
         private static ILogger _consoleLogger;
+        // Keep the factory alive so the logger it produced remains functional.
+        private static ILoggerFactory _consoleLoggerFactory;
         public static ILogger DefaultConsoleLogger
         {
             get
             {
-                if (_consoleLogger != null)
+                if (_consoleLogger == null)
                 {
-                    return _consoleLogger;
+                    lock (_consoleLoggerLock)
+                    {
+                        if (_consoleLogger == null)
+                        {
+                            _consoleLoggerFactory = LoggerFactory.Create(lb =>
+                            {
+                                lb.SetMinimumLevel(LogLevel.Trace);
+                                lb.AddConsole();
+                            });
+                            _consoleLogger = _consoleLoggerFactory.CreateLogger<ConfigClient>();
+                        }
+                    }
                 }
 
-                using (var loggerFactory = LoggerFactory.Create(lb =>
-                {
-                    lb.SetMinimumLevel(LogLevel.Trace);
-                    lb.AddConsole();
-                }))
-                {
-                    var logger = loggerFactory.CreateLogger<ConfigClient>();
-                    _consoleLogger = logger;
-                    return _consoleLogger;
-                }
+                return _consoleLogger;
             }
         }
     }

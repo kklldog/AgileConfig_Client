@@ -9,6 +9,15 @@ namespace AgileConfig.Client
 {
     class ClientShutdownHostService : IHostedService
     {
+        private readonly IConfigClient _configClient;
+
+        public ClientShutdownHostService(IConfigClient configClient)
+        {
+            // Resolve IConfigClient when hosted service starts so logger rebinding is not
+            // dependent on application code explicitly injecting IConfigClient.
+            _configClient = configClient;
+        }
+
         public Task StartAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -19,7 +28,7 @@ namespace AgileConfig.Client
             try
             {
                 // close websocket
-                await ConfigClient.Instance?.DisconnectAsync();
+                await _configClient?.DisconnectAsync();
             }
             catch
             {
