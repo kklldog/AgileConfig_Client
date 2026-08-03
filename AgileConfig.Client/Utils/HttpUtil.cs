@@ -1,133 +1,187 @@
-﻿using System.Collections.Generic;
-using System.IO;
+using System;
+using System.Collections.Generic;
 using System.Net;
-using System.Text;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AgileConfig.Client.Utils
 {
-    class HttpUtil
+    internal sealed class HttpResult
     {
-        public static HttpWebResponse Get(string url, Dictionary<string, string> headers, int? timeout)
+        private readonly Dictionary<string, string> _headers;
+
+        public HttpResult(HttpStatusCode statusCode, string content, Dictionary<string, string> headers)
         {
-            var request = WebRequest.Create(url) as HttpWebRequest;
-            request.Method = "GET";
-            if (timeout.HasValue)
-            {
-                request.Timeout = timeout.Value;
-            }
-
-            if (headers != null)
-            {
-                foreach (var keyValuePair in headers)
-                {
-                    request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                }
-            }
-
-            var response = request.GetResponse() as HttpWebResponse;
-
-            return response;
+            StatusCode = statusCode;
+            Content = content;
+            _headers = headers;
         }
 
-        public static async Task<HttpWebResponse> GetAsync(string url, Dictionary<string, string> headers, int? timeout)
+        public HttpStatusCode StatusCode { get; }
+
+        public string Content { get; }
+
+        public string GetHeader(string name)
         {
-            var request = WebRequest.Create(url) as HttpWebRequest;
-            request.Method = "GET";
-            if (timeout.HasValue)
-            {
-                request.Timeout = timeout.Value;
-            }
+            return _headers.TryGetValue(name, out var value) ? value : null;
+        }
+    }
 
-            if (headers != null)
-            {
-                foreach (var keyValuePair in headers)
-                {
-                    request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                }
-            }
+    internal interface IHttpTransport
+    {
+        Task<HttpResult> SendAsync(
+            HttpMethod method,
+            string url,
+            Dictionary<string, string> headers,
+            byte[] body,
+            int? timeout,
+            string contentType,
+            CancellationToken cancellationToken);
+    }
 
-            var response = await request.GetResponseAsync() as HttpWebResponse;
+    internal sealed class HttpClientTransport : IHttpTransport
+    {
+        private const int DefaultTimeoutMilliseconds = 100 * 1000;
+        private static readonly HttpClient SharedHttpClient = CreateSharedHttpClient();
+        private readonly HttpClient _httpClient;
 
-            return response;
+        public static IHttpTransport Shared { get; } = new HttpClientTransport(SharedHttpClient);
+
+        public HttpClientTransport(HttpClient httpClient)
+        {
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
-        public static async Task<HttpWebResponse> PostAsync(string url, Dictionary<string, string> headers, byte[] body, int? timeout, string contentType)
+        public async Task<HttpResult> SendAsync(
+            HttpMethod method,
+            string url,
+            Dictionary<string, string> headers,
+            byte[] body,
+            int? timeout,
+            string contentType,
+            CancellationToken cancellationToken)
         {
-            var request = WebRequest.Create(url) as HttpWebRequest;
-            request.Method = "POST";
-            if (timeout.HasValue)
+            if (method == null)
             {
-                request.Timeout = timeout.Value;
+                throw new ArgumentNullException(nameof(method));
             }
 
-            if (headers != null)
+            if (string.IsNullOrWhiteSpace(url))
             {
-                foreach (var keyValuePair in headers)
+                throw new ArgumentNullException(nameof(url));
+            }
+
+            var timeoutMilliseconds = timeout ?? DefaultTimeoutMilliseconds;
+            if (timeoutMilliseconds != Timeout.Infinite && timeoutMilliseconds <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(timeout));
+            }
+
+            using (var request = new HttpRequestMessage(method, url))
+            {
+                if (body != null)
                 {
-                    request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
+                    request.Content = new ByteArrayContent(body);
+                    if (!string.IsNullOrWhiteSpace(contentType))
+                    {
+                        request.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+                    }
+                }
+
+                if (headers != null)
+                {
+                    foreach (var header in headers)
+                    {
+                        if (!request.Headers.TryAddWithoutValidation(header.Key, header.Value))
+                        {
+                            throw new InvalidOperationException($"Cannot add request header '{header.Key}'.");
+                        }
+                    }
+                }
+
+                using (var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+                {
+                    if (timeoutMilliseconds != Timeout.Infinite)
+                    {
+                        timeoutSource.CancelAfter(timeoutMilliseconds);
+                    }
+
+                    using (var response = await _httpClient.SendAsync(
+                        request,
+                        HttpCompletionOption.ResponseContentRead,
+                        timeoutSource.Token).ConfigureAwait(false))
+                    {
+                        var content = response.Content == null
+                            ? string.Empty
+                            : await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        var responseHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                        foreach (var header in response.Headers)
+                        {
+                            responseHeaders[header.Key] = string.Join(",", header.Value);
+                        }
+
+                        if (response.Content != null)
+                        {
+                            foreach (var header in response.Content.Headers)
+                            {
+                                responseHeaders[header.Key] = string.Join(",", header.Value);
+                            }
+                        }
+
+                        return new HttpResult(response.StatusCode, content, responseHeaders);
+                    }
                 }
             }
-
-            request.ContentType = contentType;
-
-            //add body
-            if (body != null)
-            {
-                request.ContentLength = body.Length;
-                using (var requestStream = await request.GetRequestStreamAsync())
-                {
-                    await requestStream.WriteAsync(body, 0, body.Length);
-                }
-            }
-
-            var response = await request.GetResponseAsync() as HttpWebResponse;
-
-            return response;
         }
 
-        public static async Task<HttpWebResponse> DeleteAsync(string url, Dictionary<string, string> headers, byte[] body, int? timeout, string contentType)
+        private static HttpClient CreateSharedHttpClient()
         {
-            var request = WebRequest.Create(url) as HttpWebRequest;
-            request.Method = "DELETE";
-            if (timeout.HasValue)
+            return new HttpClient
             {
-                request.Timeout = timeout.Value;
-            }
+                Timeout = Timeout.InfiniteTimeSpan
+            };
+        }
+    }
 
-            if (headers != null)
-            {
-                foreach (var keyValuePair in headers)
-                {
-                    request.Headers.Add(keyValuePair.Key, keyValuePair.Value);
-                }
-            }
-
-            request.ContentType = contentType;
-
-
-            //add body
-            if (body != null)
-            {
-                request.ContentLength = body.Length;
-                using (var requestStream = await request.GetRequestStreamAsync())
-                {
-                    await requestStream.WriteAsync(body, 0, body.Length);
-                }
-            }
-
-            var response = await request.GetResponseAsync() as HttpWebResponse;
-
-            return response;
+    internal static class HttpUtil
+    {
+        public static Task<HttpResult> GetAsync(string url, Dictionary<string, string> headers, int? timeout)
+        {
+            return HttpClientTransport.Shared.SendAsync(
+                HttpMethod.Get,
+                url,
+                headers,
+                null,
+                timeout,
+                null,
+                CancellationToken.None);
         }
 
-        public static async Task<string> GetResponseContentAsync(HttpWebResponse response)
+        public static Task<HttpResult> PostAsync(string url, Dictionary<string, string> headers, byte[] body, int? timeout, string contentType)
         {
-            using (var responseStream = response.GetResponseStream())
-            {
-                using (var reader = new StreamReader(responseStream, Encoding.UTF8))
-                    return await reader.ReadToEndAsync();
-            }
+            return HttpClientTransport.Shared.SendAsync(
+                HttpMethod.Post,
+                url,
+                headers,
+                body,
+                timeout,
+                contentType,
+                CancellationToken.None);
+        }
+
+        public static Task<HttpResult> DeleteAsync(string url, Dictionary<string, string> headers, byte[] body, int? timeout, string contentType)
+        {
+            return HttpClientTransport.Shared.SendAsync(
+                HttpMethod.Delete,
+                url,
+                headers,
+                body,
+                timeout,
+                contentType,
+                CancellationToken.None);
         }
     }
 }

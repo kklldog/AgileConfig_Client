@@ -136,11 +136,11 @@ namespace AgileConfig.Client.RegisterCenter
                 var getUrl = host + (host.EndsWith("/") ? "" : "/") + $"api/registercenter/services";
                 try
                 {
-                    var resp = await HttpUtil.GetAsync(getUrl, null, null);
+                    var resp = await HttpUtil.GetAsync(getUrl, null, null).ConfigureAwait(false);
 
                     if (resp.StatusCode == System.Net.HttpStatusCode.OK)
                     {
-                        var content = await HttpUtil.GetResponseContentAsync(resp);
+                        var content = resp.Content;
                         if (!string.IsNullOrEmpty(content))
                         {
                             var result = JsonSerializer.Deserialize<List<ServiceInfo>>(content, MsJsonSerializerOption.Default);
@@ -159,6 +159,7 @@ namespace AgileConfig.Client.RegisterCenter
                     }
                     else
                     {
+                        failCount++;
                         _logger.LogTrace($"DiscoveryService refresh all services fail , url {getUrl} , status code {resp.StatusCode} .");
                     }
                 }

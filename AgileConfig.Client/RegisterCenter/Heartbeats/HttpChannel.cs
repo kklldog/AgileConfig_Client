@@ -33,13 +33,13 @@ namespace AgileConfig.Client.RegisterCenter.Heartbeats
                 var postUrl = host + (host.EndsWith("/") ? "" : "/") + $"api/registercenter/heartbeat";
                 try
                 {
-                    var resp = await HttpUtil.PostAsync(postUrl, null, data, null, "application/json");
+                    var resp = await HttpUtil.PostAsync(postUrl, null, data, null, "application/json").ConfigureAwait(false);
 
                     if (resp.StatusCode == System.Net.HttpStatusCode.OK)
                     {
                         _logger.LogTrace($"HttpChannel send a heartbeat to {postUrl} success .");
 
-                        var content = await HttpUtil.GetResponseContentAsync(resp);
+                        var content = resp.Content;
                         MessageCenter.Receive(content); // Forward the server response.
                     }
                     else

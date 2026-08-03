@@ -653,27 +653,25 @@ namespace AgileConfig.Client
                     };
                     var apiUrl = server + (server.EndsWith("/") ? "" : "/") + $"api/config/app/{appId}?env={Env}";
                     var timeout = (HttpTimeout <= 0 ? 30 : HttpTimeout) * 1000;
-                    using (var response = HttpUtil.Get(apiUrl, headers, timeout))
+                    var response = await HttpUtil.GetAsync(apiUrl, headers, timeout).ConfigureAwait(false);
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     {
-                        if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                        {
-                            CurrentPublishTimeLineId = response.Headers.Get(Const.HeaderKeyPublishTimeLineId);
+                        CurrentPublishTimeLineId = response.GetHeader(Const.HeaderKeyPublishTimeLineId);
 
-                            var respContent = await HttpUtil.GetResponseContentAsync(response);
-                            LastLoadedTimeFromServer = DateTime.Now;
-                            ReloadDataDictFromContent(respContent);
-                            WriteConfigsToLocal(respContent);
-                            _isLoadFromLocal = false;
-                            await SendLoadedNoticeToServer();
+                        var respContent = response.Content;
+                        LastLoadedTimeFromServer = DateTime.Now;
+                        ReloadDataDictFromContent(respContent);
+                        WriteConfigsToLocal(respContent);
+                        _isLoadFromLocal = false;
+                        await SendLoadedNoticeToServer();
 
-                            Logger?.LogTrace("client load all the configs success by API: {api}, publishTimeLineId: {publishTimeLineId} , try count: {count}.", apiUrl, CurrentPublishTimeLineId, failCount);
-                            return true;
-                        }
-                        else
-                        {
-                            //load remote configs err .
-                            throw new Exception($"client try to load all the configs but failed , url {apiUrl}.");
-                        }
+                        Logger?.LogTrace("client load all the configs success by API: {api}, publishTimeLineId: {publishTimeLineId} , try count: {count}.", apiUrl, CurrentPublishTimeLineId, failCount);
+                        return true;
+                    }
+                    else
+                    {
+                        //load remote configs err .
+                        throw new Exception($"client try to load all the configs but failed , url {apiUrl}.");
                     }
                 }
                 catch (Exception ex)
