@@ -6,6 +6,9 @@ AgileConfig client implemented with .NET Standard 2.0.
 ![Nuget](https://img.shields.io/nuget/v/agileconfig.client)
 ![Nuget](https://img.shields.io/nuget/dt/agileconfig.client?label=download)
 
+## protocal
+If you want to implement another client you can ref doc https://github.com/kklldog/AgileConfig_Client/blob/master/docs/configuration-client-protocol.md
+
 ## Using the client
 
 ### Install the client
